@@ -19,6 +19,7 @@ A pasta `C:\PROJETO-TAREFAS\dados` continua recebendo uma cópia de tudo a cada 
 | `supabase/1-estrutura.sql` | Cria as tabelas e as regras de acesso |
 | `supabase/2-administrador.sql` | Torna o rh@useebrasil.com.br administrador |
 | `supabase/3-senhas-iniciais.sql` | Guarda a senha gerada pelo RH até a pessoa trocar a própria senha |
+| `supabase/4-responsaveis.sql` | Responsáveis por tarefa: cada pessoa só vê as tarefas em que é responsável |
 | `.gitignore` | Impede que a pasta `dados` vá para o GitHub |
 
 ## Passo 1. Supabase
@@ -27,7 +28,7 @@ A pasta `C:\PROJETO-TAREFAS\dados` continua recebendo uma cópia de tudo a cada 
 2. Abra **SQL Editor**, clique em **New query**, cole todo o conteúdo de `supabase/1-estrutura.sql` e clique em **Run**.
 3. Abra **Authentication > Users > Add user > Create new user**. Informe `rh@useebrasil.com.br`, a senha do administrador e marque **Auto Confirm User**.
 4. Volte ao **SQL Editor**, cole o conteúdo de `supabase/2-administrador.sql` e clique em **Run**. Deve aparecer uma linha com `is_admin = true`.
-   Depois, faça o mesmo com `supabase/3-senhas-iniciais.sql`.
+   Depois, faça o mesmo com `supabase/3-senhas-iniciais.sql` e `supabase/4-responsaveis.sql`.
 5. Abra **Authentication > Sign In / Providers** e desligue **Allow new users to sign up**. Assim, só entra quem você liberar.
 6. Abra **Project Settings > API Keys** (ou **Data API**) e anote três coisas:
    - a **URL** do projeto (`https://xxxx.supabase.co`);
@@ -74,6 +75,8 @@ Dica: no Windows, arquivos que começam com ponto (`.gitignore`) às vezes ficam
 1. Clique em **Usuários e acessos**.
 2. Digite o e-mail, marque as empresas e clique em **Liberar acesso e gerar senha**.
 3. A senha fica na linha da pessoa: clique em **Ver** para mostrar ou em **Copiar e-mail e senha** para enviar.
+
+Quem recebe acesso começa **sem nenhuma tarefa**. Para atribuir, abra a tarefa e marque a pessoa em **Responsáveis**. Ela vê a tarefa na hora. Só o administrador vê todas as tarefas, muda os responsáveis e exclui tarefas. Para achar o que ainda não tem dono, use o filtro **Sem responsável** na barra de filtros.
 
 Na mesma tela você muda as empresas de cada pessoa (vale na hora), usa **Resetar senha** para gerar uma nova senha e remove o acesso de quem saiu.
 

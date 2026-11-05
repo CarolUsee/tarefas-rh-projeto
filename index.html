@@ -148,6 +148,19 @@ input,select,textarea{font:inherit;color:var(--text)}
 .c-chk:hover{border-color:var(--green);color:var(--green)}
 .card.done .c-chk{opacity:1;background:var(--green);border-color:var(--green);color:#fff}
 .c-pin{color:var(--amber)}
+.c-resp{display:inline-flex;margin-left:auto}
+.c-resp .ini{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:800;background:var(--cyan);color:#fff;box-shadow:0 0 0 2px var(--card);margin-left:-5px}
+.c-resp .ini:first-child{margin-left:0}
+.c-resp .ini.more{background:var(--list-h);color:var(--muted)}
+.c-nores{font-size:11px;font-weight:700;color:var(--faint);border:1px dashed var(--line);border-radius:4px;padding:0 5px}
+.resp-l{display:flex;flex-wrap:wrap;gap:6px}
+.resp-c{display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;background:var(--list-h);font-size:12.5px;font-weight:600;color:var(--text);border:1.5px solid transparent}
+.resp-c .ini{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:800;background:var(--faint);color:#fff}
+.resp-c.on{border-color:var(--cyan);background:var(--card)}
+.resp-c.on .ini{background:var(--cyan)}
+.resp-sel{height:30px;border-radius:6px;background:var(--chip-board);color:var(--on-board);font:inherit;font-size:12.5px;font-weight:600;padding:0 8px;border:1px solid var(--chip-board-h);max-width:230px}
+.resp-sel.on{background:var(--on-board);color:#0D1B3E}
+.resp-sel option{color:#0D1B3E;background:#fff}
 .card.pinned{box-shadow:inset 3px 0 0 var(--amber),var(--shadow)}
 .list.l-pin{background:var(--amber-bg);box-shadow:inset 0 0 0 2px var(--amber),var(--shadow)}
 .l-note{display:flex;align-items:center;gap:6px;padding:9px 14px 11px;font-size:12px;font-weight:600;color:var(--muted);border-top:1px solid var(--line)}
@@ -599,12 +612,18 @@ function byDue(x,y){const dx=sortDate(x),dy=sortDate(y);return dx<dy?-1:dx>dy?1:
 function byPin(x,y){return(data.pinned[y.a.id]?1:0)-(data.pinned[x.a.id]?1:0);}
 
 /* ══════════ ESTADO DA TELA ══════════ */
-const st={board:'all',view:'quadro',priF:'todas',q:'',weekOff:0,mY:NOW.getFullYear(),mM:NOW.getMonth(),mSel:null,showAllDone:false};
+const st={board:'all',view:'quadro',priF:'todas',respF:'todos',q:'',weekOff:0,mY:NOW.getFullYear(),mM:NOW.getMonth(),mSel:null,showAllDone:false};
 let drag=null;
 
 function boardCids(){return st.board==='all'?CIDS:[st.board];}
+function passResp(a){
+  if(MODE!=='online'||st.respF==='todos')return true;
+  const r=(a.resp||[]).filter(id=>SB.teamMap[id]); // ignora quem já teve o acesso removido
+  return st.respF==='sem'?!r.length:r.includes(st.respF==='eu'?SB.user?.id:st.respF);
+}
 function passFilters(a){
   if(st.priF!=='todas'&&a.pri!==st.priF)return false;
+  if(!passResp(a))return false;
   if(st.q){const q=st.q.toLowerCase();if(!(`${a.title} ${a.desc||''} ${a.cat||''}`.toLowerCase().includes(q)))return false;}
   return true;
 }
@@ -638,6 +657,10 @@ function render(){
   renderBoards();renderSub();
   if(MODE==='loading'){c.innerHTML=`<div class="banner"><b>Carregando as tarefas</b><span class="hint" id="load-hint">Conectando ao banco de dados.</span></div>`;return;}
   if(MODE==='online'&&!allowedCos().length){c.innerHTML=`<div class="banner"><b>Nenhuma empresa liberada</b><span>Seu acesso existe, mas ainda não tem nenhuma empresa marcada. Fale com o RH.</span></div>`;return;}
+  if(MODE==='online'&&!isAdmin()&&!allActs().length){
+    c.innerHTML=`<div class="banner"><b>Nenhuma tarefa atribuída a você ainda</b><span>Quando o RH colocar você como responsável por uma tarefa, ela aparece aqui na hora. Você também pode criar uma tarefa sua em <b>Nova tarefa</b>.</span><div><button class="b pri" onclick="openCreate()">${ic('plus')}Nova tarefa</button></div></div>`;
+    return;
+  }
   if(MODE==='online'&&isAdmin()&&!allActs().length){
     c.innerHTML=`<div class="banner"><b>O quadro online ainda está vazio</b><span>Para trazer suas tarefas atuais, clique em <b>Importar backup</b> e escolha o arquivo <b>tarefas-rh-dados.json</b> da pasta C:\\Developer\\tarefas-rh-projeto\\dados. Nada é apagado do seu computador.</span><div><button class="b pri" onclick="pickImport()">${ic('upload')}Importar backup</button> <button class="b" onclick="openCreate()">${ic('plus')}Criar tarefa</button></div></div>`;
     return;
@@ -671,7 +694,12 @@ function renderSub(){
   [['todas','Todas',null],['alta','Alta',PRI_COLOR.alta],['media','Média',PRI_COLOR.media],['baixa','Baixa',PRI_COLOR.baixa]].forEach(([id,l,c])=>{
     h+=`<button class="fc${st.priF===id?' on':''}" onclick="st.priF='${id}';render()">${c?`<span class="pd" style="background:${c}"></span>`:ic('flag','s')}${l}</button>`;
   });
-  const acts=viewActs().filter(({a,cid})=>boardCids().includes(cid)&&isActive(a));
+  if(MODE==='online'&&isAdmin()){ // filtro de responsável (só o administrador vê tarefas de todos)
+    const opts=[['todos','Todos os responsáveis'],['sem','Sem responsável'],['eu','Atribuídas a mim'],...SB.team.filter(u=>u.user_id!==SB.user?.id).map(u=>[u.user_id,personName(u)])];
+    if(!opts.some(o=>o[0]===st.respF))st.respF='todos';
+    h+=`<select class="resp-sel${st.respF!=='todos'?' on':''}" onchange="st.respF=this.value;render()" aria-label="Filtrar por responsável">${opts.map(([v,l])=>`<option value="${esc(v)}"${st.respF===v?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  }
+  const acts=viewActs().filter(({a,cid})=>boardCids().includes(cid)&&isActive(a)&&passResp(a));
   const ov=acts.filter(x=>isOverdue(x.a)).length;
   const hoje=acts.filter(x=>['hoje','rot'].includes(todayBucket(x.a))).length;
   const abertas=acts.filter(x=>isMonthly(x.a)?(monthStarted(x.a,TODAY)&&!isMonthDone(x.a,ymOf(TODAY))):(!isRec(x.a)&&statusOf(x.a)!=='concluido')).length;
@@ -706,7 +734,8 @@ function cardHTML(a,cid,o={}){
     a.desc?`<span title="Tem descrição">${ic('text','s')}</span>`:'',
     cl.length?`<span title="Checklist">${ic('list','s')}${cl.filter(x=>x.done).length}/${cl.length}</span>`:'',
     cm.length?`<span title="Comentários">${ic('message','s')}${cm.length}</span>`:'',
-    rec&&!isActive(a)?`<span>${ic('pause','s')}Pausada</span>`:''
+    rec&&!isActive(a)?`<span>${ic('pause','s')}Pausada</span>`:'',
+    respBadge(a)
   ].join('');
   const canDrag=!rec&&!o.noDrag;
   const chkCall=mon?`toggleMonthDone('${a.id}','${ds}',event)`:rec?`toggleRecDone('${a.id}','${ds}',event)`:`toggleTaskDone('${a.id}',event)`;
@@ -717,6 +746,17 @@ function cardHTML(a,cid,o={}){
     <div class="c-foot"><div class="c-meta">${meta}</div></div>
     ${showChk?`<button class="c-chk" onclick="${chkCall}" title="${done?'Reabrir':'Concluir'}" aria-label="${done?'Reabrir':'Concluir'}">${ic('check','s')}</button>`:''}
   </div>`;
+}
+/* responsáveis (usuários) da tarefa */
+function personName(u){return u?(u.nome||String(u.email||'').split('@')[0]):'';}
+function initials(u){const n=personName(u).trim();if(!n)return'?';const p=n.split(/[\s._-]+/).filter(Boolean);return((p[0]||'')[0]+((p[1]||'')[0]||'')).toUpperCase();}
+function respUsers(a){return(a.resp||[]).map(id=>SB.teamMap[id]).filter(Boolean);}
+function respBadge(a){
+  if(MODE!=='online')return'';
+  const us=respUsers(a);
+  if(!us.length)return isAdmin()?`<span class="c-nores" title="Ninguém é responsável por esta tarefa">Sem responsável</span>`:'';
+  const names=us.map(personName).join(', ');
+  return`<span class="c-resp" title="Responsáveis: ${esc(names)}">${us.slice(0,3).map(u=>`<span class="ini">${esc(initials(u))}</span>`).join('')}${us.length>3?`<span class="ini more">+${us.length-3}</span>`:''}</span>`;
 }
 function listHTML(title,icon,items,o={}){
   const body=items.length?items.join(''):`<div class="empty-l">${o.empty||'Nada por aqui'}</div>`;
@@ -893,7 +933,7 @@ function openCreate(def={}){
   mst={mode:'create',dirty:false,showShare:false,showDel:false,w:{
     title:def.title||'',desc:'',cat:CATS[0],pri:'media',status:def.status&&def.status!=='concluido'?def.status:'pendente',
     schedType:def.schedType||'date',startDate:def.dueDate||TODAY,endDate:'',repeat:false,weekDay:1,companies:[co],
-    members:[],checklist:[]}};
+    members:[],checklist:[],resp:MODE==='online'&&!isAdmin()&&SB.user?[SB.user.id]:[]}};
   if(def.status==='concluido')mst.w.status='concluido';
   buildModal();openOv();setTimeout(()=>document.getElementById('m-title')?.focus(),60);
 }
@@ -902,7 +942,7 @@ function openEdit(id,ds){
   mst={mode:'edit',id:a.id,cid:f.cid,ds:ds||TODAY,dirty:false,showShare:false,showDel:false,w:{
     title:a.title||'',desc:a.desc||'',cat:a.cat||CATS[0],pri:a.pri||'media',status:statusOf(a),
     ...editDates(a),weekDay:a.weekDay??1,companies:[f.cid],
-    members:[...(a.members||[])],checklist:JSON.parse(JSON.stringify(a.checklist||[]))}};
+    members:[...(a.members||[])],checklist:JSON.parse(JSON.stringify(a.checklist||[])),resp:[...(a.resp||[])]}};
   buildModal();openOv();
 }
 /* datas da tarefa no formulário: tipo, início, data final e se repete */
@@ -949,6 +989,7 @@ function buildModal(){
   <div class="md-where">${where}</div>
   <div class="md-g"><div>
     <div class="sec"><div class="sec-t">${ic('building')}Empresa</div><div class="sec-b"><div class="cos" id="m-cos">${cosHTML()}</div>${!isEdit?'<div class="hint" style="margin-top:6px">Escolha mais de uma para criar a mesma tarefa em cada empresa.</div>':''}</div></div>
+    ${MODE==='online'?`<div class="sec"><div class="sec-t">${ic('users')}Responsáveis</div><div class="sec-b" id="m-resp">${respHTML()}</div></div>`:''}
     <div class="sec"><div class="sec-t">${ic('tag')}Detalhes</div><div class="sec-b"><div class="fl">
       <div class="fld"><label for="m-cat">Categoria</label><select id="m-cat" class="sel" onchange="W('cat',this.value)">${cats.map(c=>`<option${c===w.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="fld"><label for="m-pri">Prioridade</label><select id="m-pri" class="sel" onchange="W('pri',this.value)">${['alta','media','baixa'].map(p=>`<option value="${p}"${p===w.pri?' selected':''}>${PRI_LBL[p]}</option>`).join('')}</select></div>
@@ -971,7 +1012,22 @@ function cosHTML(){
   const lim=allowedCos();
   return Object.values(COS).filter(c=>lim.includes(c.id)||mst.w.companies.includes(c.id)).map(c=>{const on=mst.w.companies.includes(c.id);return`<button class="co${on?' on':''}" style="${on?'color:'+c.color:''}" onclick="toggleCo('${c.id}')" aria-pressed="${on}"><span class="cd" style="background:${c.color}"></span><span style="color:var(--text)">${esc(c.label)}</span></button>`;}).join('');
 }
-function toggleCo(id){const l=mst.w.companies;const i=l.indexOf(id);if(i>=0){if(l.length>1)l.splice(i,1);}else l.push(id);mst.dirty=true;document.getElementById('m-cos').innerHTML=cosHTML();}
+function toggleCo(id){const l=mst.w.companies;const i=l.indexOf(id);if(i>=0){if(l.length>1)l.splice(i,1);}else l.push(id);mst.dirty=true;document.getElementById('m-cos').innerHTML=cosHTML();const r=document.getElementById('m-resp');if(r)r.innerHTML=respHTML();}
+/* quem pode ser responsável numa empresa: administradores e quem tem a empresa liberada */
+function canBeResp(u,cid){return!!u&&(u.is_admin||(u.empresas||[]).includes(cid));}
+function respHTML(){
+  const w=mst.w;
+  if(!isAdmin()){
+    const us=w.resp.map(id=>SB.teamMap[id]).filter(Boolean);
+    return(us.length?`<div class="resp-l">${us.map(u=>`<span class="resp-c on"><span class="ini">${esc(initials(u))}</span>${esc(personName(u))}</span>`).join('')}</div>`:'<div class="hint">Ninguém ainda.</div>')+
+      `<div class="hint" style="margin-top:6px">Só o administrador muda os responsáveis.</div>`;
+  }
+  const cands=SB.team.filter(u=>w.companies.some(c=>canBeResp(u,c))||w.resp.includes(u.user_id));
+  if(!cands.length)return'<div class="hint">Nenhum usuário com acesso a esta empresa. Libere em Usuários e acessos.</div>';
+  return`<div class="resp-l">${cands.map(u=>{const on=w.resp.includes(u.user_id);return`<button class="resp-c${on?' on':''}" onclick="toggleResp('${u.user_id}')" aria-pressed="${on}" title="${esc(u.email)}"><span class="ini">${esc(initials(u))}</span>${esc(personName(u))}${u.is_admin?' <span class="hint">(admin)</span>':''}</button>`;}).join('')}</div>
+    <div class="hint" style="margin-top:6px">${w.resp.length?'Só as pessoas marcadas (e o administrador) veem esta tarefa.':'Sem responsável: só o administrador vê esta tarefa.'}</div>`;
+}
+function toggleResp(id){const l=mst.w.resp;const i=l.indexOf(id);if(i>=0)l.splice(i,1);else l.push(id);mst.dirty=true;document.getElementById('m-resp').innerHTML=respHTML();}
 function schedHTML(){
   const w=mst.w,s=w.schedType;
   const tabs=[['date','calendar','Data'],['semanal','repeat','Toda semana'],['diaria','sun','Diária']];
@@ -1051,6 +1107,7 @@ function actionsHTML(a){
   }else{
     h+=`<button class="b full" onclick="doneFromModal('${a.id}')">${ic(statusOf(a)==='concluido'?'undo':'check')}${statusOf(a)==='concluido'?'Reabrir':'Concluir'}</button>`;
   }
+  if(!isAdmin())return h; // excluir tarefa: só o administrador
   if(!mst.showDel)h+=`<button class="b full danger" onclick="mst.showDel=true;document.getElementById('m-actions').innerHTML=actionsHTML(findAct('${a.id}').a)">${ic('trash')}Excluir</button>`;
   else{
     const n=allActs().filter(x=>x.a.title===a.title).length;
@@ -1083,6 +1140,9 @@ function saveModal(){
     monthDay:s==='mensal'?parseD(w.startDate).getDate():null,
     monthDayEnd:s==='mensal'&&w.endDate?parseD(w.endDate).getDate():null,
     members:[...w.members],checklist:w.checklist};
+  // responsáveis por empresa: só quem tem acesso a ela. Quem não é administrador não muda os responsáveis.
+  const respFor=c=>isAdmin()?w.resp.filter(id=>canBeResp(SB.teamMap[id],c)):[SB.user.id];
+  const setResp=t=>{if(MODE==='online'&&isAdmin())t.resp=respFor(t.company);};
   if(mst.mode==='edit'){
     const cur=findAct(mst.id);if(!cur){closeModal(true);return;}
     const a=cur.a;
@@ -1091,17 +1151,22 @@ function saveModal(){
     Object.assign(a,f);
     if(s==='date'&&w.status!==prev)setTaskStatus(a,w.status);
     else if(s!=='date')a.status='pendente';else a.status=prev;
+    const touched=[a];
+    const addCopy=(c,i)=>{const n=copyAct(a,c,i);touched.push(n);data.acts[c].unshift(n);};
     if(!sel.includes(cur.cid)){ // trocou de empresa: move
       data.acts[cur.cid]=data.acts[cur.cid].filter(x=>x!==a);
       const to=sel[0];a.company=to;data.acts[to].unshift(a);
-      sel.slice(1).forEach((c,i)=>data.acts[c].unshift(copyAct(a,c,i+1)));
+      sel.slice(1).forEach((c,i)=>addCopy(c,i+1));
     }else{
       a.company=cur.cid;
-      sel.filter(c=>c!==cur.cid).forEach((c,i)=>data.acts[c].unshift(copyAct(a,c,i+1)));
+      sel.filter(c=>c!==cur.cid).forEach((c,i)=>addCopy(c,i+1));
     }
+    touched.forEach(setResp);
   }else{
     w.companies.forEach((c,i)=>{
-      data.acts[c].unshift({id:newId(i),...f,checklist:JSON.parse(JSON.stringify(f.checklist)),status:s==='date'?w.status:'pendente',...(s==='date'&&w.status==='concluido'?{doneAt:TODAY}:{}),active:true,company:c,createdAt:TODAY,createdByEmail:MODE==='online'?SB.user.email:undefined,comments:[]});
+      const t={id:newId(i),...f,checklist:JSON.parse(JSON.stringify(f.checklist)),status:s==='date'?w.status:'pendente',...(s==='date'&&w.status==='concluido'?{doneAt:TODAY}:{}),active:true,company:c,createdAt:TODAY,createdByEmail:MODE==='online'?SB.user.email:undefined,comments:[]};
+      if(MODE==='online')t.resp=respFor(c);
+      data.acts[c].unshift(t);
     });
   }
   const created=mst.mode==='create';
@@ -1236,7 +1301,7 @@ function paintSync(){
 
 /* ══════════ BANCO DE DADOS ONLINE (Supabase) ══════════ */
 const CFG=window.TAREFAS_CONFIG||{};
-const SB={c:null,user:null,perfil:null,sent:{},prefsSent:null,syncing:false,again:false,err:false,lastFetch:0,chan:null,retry:null};
+const SB={c:null,user:null,perfil:null,team:[],teamMap:{},sent:{},prefsSent:null,syncing:false,again:false,err:false,lastFetch:0,chan:null,retry:null};
 function cloudConfigured(){return!!(CFG.supabaseUrl&&CFG.supabaseAnonKey&&!/SEU-PROJETO|COLE-AQUI/.test(CFG.supabaseUrl+CFG.supabaseAnonKey)&&window.supabase&&window.supabase.createClient);}
 
 function showLogin(msg){
@@ -1262,6 +1327,7 @@ async function afterLogin(user){
   if(error||!perfil){await SB.c.auth.signOut();showLogin(error?'Não foi possível carregar seu acesso. Tente de novo.':'Seu acesso ainda não foi liberado. Fale com o RH.');return;}
   SB.perfil=perfil;
   try{await loadAll();}catch(e){showLogin('Não foi possível carregar as tarefas. Tente de novo.');return;}
+  await loadTeam();
   const{data:pf}=await SB.c.from('prefs').select('pinned').eq('user_id',user.id).maybeSingle();
   data.pinned={...((pf&&pf.pinned)||{})};SB.prefsSent=stable(data.pinned);
   subscribe();
@@ -1269,6 +1335,17 @@ async function afterLogin(user){
   if(!allowedCos().includes(st.board))st.board='all';
   render();paintSync();
   initFolder();
+}
+/* equipe: o administrador lê todos os perfis (com as empresas, para saber quem pode ser responsável);
+   os demais só recebem nome e e-mail, para mostrar os responsáveis nos cartões */
+async function loadTeam(){
+  let list=[];
+  try{
+    if(isAdmin()){const{data:r,error}=await SB.c.from('perfis').select('user_id,email,nome,is_admin,empresas');if(error)throw error;list=r||[];}
+    else{const{data:r,error}=await SB.c.rpc('equipe');if(error)throw error;list=r||[];}
+  }catch(e){list=SB.perfil?[{...SB.perfil}]:[];}
+  list.sort((x,y)=>personName(x).localeCompare(personName(y),'pt-BR'));
+  SB.team=list;SB.teamMap=Object.fromEntries(list.map(u=>[u.user_id,u]));
 }
 async function loadAll(){
   const rows=[];
@@ -1342,7 +1419,7 @@ async function logout(){
   closeMenu();
   if(SB.syncing||SB.again){toast('clock','Aguarde terminar de salvar.');return;}
   if(SB.chan){SB.c.removeChannel(SB.chan);SB.chan=null;}
-  await SB.c.auth.signOut();SB.user=null;SB.perfil=null;showLogin();
+  await SB.c.auth.signOut();SB.user=null;SB.perfil=null;SB.team=[];SB.teamMap={};st.respF='todos';showLogin();
 }
 
 /* ══════════ MENU DO USUÁRIO ══════════ */
@@ -1417,7 +1494,7 @@ function buildAdmin(){
   const w=mst.w;
   const list=w.users===null?'<div class="hint">Carregando usuários.</div>':(w.users.length?w.users.map(u=>`<div class="acc-row">
       <span class="av">${ic('users','s')}</span>
-      <span class="nm">${esc(u.email)}${u.nome?`<br><span class="hint">${esc(u.nome)}</span>`:''}</span>
+      <span class="nm">${esc(u.email)}<br><span class="hint">${u.nome?esc(u.nome)+' · ':''}${(()=>{const n=allActs().filter(x=>(x.a.resp||[]).includes(u.user_id)).length;return n?`${n} ${n===1?'tarefa atribuída':'tarefas atribuídas'}`:'nenhuma tarefa atribuída';})()}</span></span>
       ${u.is_admin?`<span class="tagadm">Administrador, vê todas as empresas</span>`:`<div class="cos">${userChips(u)}</div>
       <button class="b sm" onclick="accReset('${u.user_id}')">${ic('undo','s')}Resetar senha</button>
       <button class="x" onclick="accDel('${u.user_id}')" title="Remover acesso" aria-label="Remover acesso">${ic('trash','s')}</button>`}
@@ -1455,7 +1532,7 @@ async function accCreate(){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){w.err='Digite um e-mail válido.';buildAdmin();return;}
   if(!w.newCos.length){w.err='Marque pelo menos uma empresa.';buildAdmin();return;}
   w.busy=true;w.err='';buildAdmin();
-  try{const j=await api('create',{email,nome,empresas:w.newCos});w.newCos=[];if(mst&&mst.mode==='admin')await afterPw(email,j.password);}
+  try{const j=await api('create',{email,nome,empresas:w.newCos});w.newCos=[];if(mst&&mst.mode==='admin')await afterPw(email,j.password);await loadTeam();render();}
   catch(e){w.err=e.message;}
   w.busy=false;if(mst&&mst.mode==='admin')buildAdmin();
 }
@@ -1463,7 +1540,7 @@ async function accToggle(uid,c){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
   const l=[...(u.empresas||[])];const i=l.indexOf(c);if(i>=0)l.splice(i,1);else l.push(c);
   const old=u.empresas;u.empresas=l;buildAdmin();
-  try{await api('update',{user_id:uid,empresas:l});toast('check','Acesso atualizado.');}catch(e){u.empresas=old;w.err=e.message;buildAdmin();}
+  try{await api('update',{user_id:uid,empresas:l});if(SB.teamMap[uid])SB.teamMap[uid].empresas=l;toast('check','Acesso atualizado.');}catch(e){u.empresas=old;w.err=e.message;buildAdmin();}
 }
 async function accReset(uid){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
@@ -1474,8 +1551,8 @@ async function accReset(uid){
 async function accDel(uid){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
   if(!await ask(`Remover o acesso de ${u.email}?\nA pessoa não consegue mais entrar. As tarefas continuam.`,{title:'Remover acesso',ok:'Remover acesso',danger:true}))return;
-  try{await api('delete',{user_id:uid});w.users=w.users.filter(x=>x.user_id!==uid);w.err='';toast('trash','Acesso removido.');}catch(e){w.err=e.message;}
-  buildAdmin();
+  try{await api('delete',{user_id:uid});w.users=w.users.filter(x=>x.user_id!==uid);w.err='';toast('trash','Acesso removido.');await loadTeam();render();}catch(e){w.err=e.message;}
+  if(mst&&mst.mode==='admin')buildAdmin();
 }
 async function copyPw(uid){
   const u=(mst?.w?.users||[]).find(x=>x.user_id===uid);if(!u||!u.senha)return;
