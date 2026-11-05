@@ -274,6 +274,11 @@ textarea.in{width:100%;resize:vertical;min-height:84px;line-height:1.5}
 .lg-err{color:var(--red);font-size:13px;font-weight:600;min-height:18px}
 .pw{display:flex;align-items:center;gap:10px;background:var(--green-bg);border-radius:10px;padding:12px 14px;margin:10px 0;flex-wrap:wrap}
 .pw code{font-family:ui-monospace,Consolas,monospace;font-size:17px;font-weight:700;letter-spacing:.04em;color:var(--text);flex:1}
+.acc-pw{display:inline-flex;align-items:center;gap:6px;flex-basis:100%;padding-left:40px;font-size:12.5px;color:var(--muted)}
+.acc-pw code{font-family:ui-monospace,Consolas,monospace;font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--text);background:var(--list-h);padding:3px 8px;border-radius:6px}
+.dlg-ov{z-index:60;align-items:center}
+.dlg{max-width:440px}
+.dlg-b{padding:4px 20px 6px;font-size:14px;line-height:1.5;white-space:pre-line}
 .tagadm{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--list-h);color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:#0D1B3E;color:#fff;padding:10px 16px;border-radius:9px;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;opacity:0;pointer-events:none;transition:all .2s;z-index:60;max-width:92vw}
 .toast.show{opacity:1;transform:translateX(-50%)}
@@ -338,6 +343,9 @@ textarea.in{width:100%;resize:vertical;min-height:84px;line-height:1.5}
 
 <div class="ov" id="ov" onmousedown="if(event.target===this)closeModal()">
   <div class="md" id="md" role="dialog" aria-modal="true"></div>
+</div>
+<div class="ov dlg-ov" id="dlg" onmousedown="if(event.target===this)dlgClose(false)">
+  <div class="md dlg" id="dlg-md" role="alertdialog" aria-modal="true"></div>
 </div>
 <div class="menu" id="menu"></div>
 <div class="toast" id="toast"></div>
@@ -404,6 +412,8 @@ const IC={
   external:'<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
   arrow:'<path d="M5 12h14m-6-6 6 6-6 6"/>',
   lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff:'<path d="M9.9 5.2A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 0 1-4.2-4.2"/><path d="M3 3l18 18"/>',
   layers:'<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>'
 };
 function ic(n,cls){return`<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]||''}</svg>`;}
@@ -771,9 +781,23 @@ function openEdit(id,ds){
 function openOv(){document.getElementById('ov').classList.add('open');document.body.style.overflow='hidden';autoGrow(document.getElementById('m-title'));}
 function closeModal(force){
   if(!mst)return;
-  if(!force&&mst.dirty&&!confirm('Descartar as alterações deste cartão?'))return;
+  if(!force&&mst.dirty){ask('Descartar as alterações deste cartão?',{ok:'Descartar',danger:true}).then(ok=>{if(ok)closeModal(true);});return;}
   document.getElementById('ov').classList.remove('open');mst=null;
 }
+/* Janela de confirmação da plataforma (no lugar do confirm do navegador) */
+let _dlg=null;
+function ask(msg,o={}){
+  if(_dlg)_dlg(false);
+  return new Promise(res=>{
+    _dlg=res;
+    document.getElementById('dlg-md').innerHTML=`<div class="md-h">${ic(o.icon||(o.danger?'alert':'check'),'l')}<div style="flex:1;font-size:17px;font-weight:700;padding:4px 8px">${esc(o.title||'Confirmar')}</div></div>
+    <div class="dlg-b">${esc(msg)}</div>
+    <div class="md-f"><button class="b" onclick="dlgClose(false)">${esc(o.cancel||'Cancelar')}</button><button class="b ${o.danger?'danger':'pri'}" id="dlg-ok" onclick="dlgClose(true)">${esc(o.ok||'Confirmar')}</button></div>`;
+    document.getElementById('dlg').classList.add('open');
+    setTimeout(()=>document.getElementById('dlg-ok')?.focus(),30);
+  });
+}
+function dlgClose(v){const r=_dlg;_dlg=null;document.getElementById('dlg').classList.remove('open');if(r)r(v);}
 function W(k,v){mst.w[k]=v;mst.dirty=true;}
 
 function buildModal(){
@@ -909,13 +933,13 @@ function saveModal(){
 }
 function copyAct(a,c,i){const n=JSON.parse(JSON.stringify(a));n.id=newId(i);n.company=c;n.status=isRec(a)?'pendente':statusOf(a);n.active=true;n.createdAt=TODAY;n.comments=[];return n;}
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('menu').classList.contains('open'))closeMenu();else if(mst)closeModal();else toggleNotes(false);}});
+document.addEventListener('keydown',e=>{if(_dlg){if(e.key==='Escape')dlgClose(false);return;}if(e.key==='Escape'){if(document.getElementById('menu').classList.contains('open'))closeMenu();else if(mst)closeModal();else toggleNotes(false);}});
 
 /* ══════════ ANOTAÇÕES ══════════ */
 (function(){try{document.getElementById('note').value=localStorage.getItem('rh_note')||'';}catch(e){}})();
 let _nt;
 function saveNote(){clearTimeout(_nt);_nt=setTimeout(()=>{try{localStorage.setItem('rh_note',document.getElementById('note').value);}catch(e){}scheduleFolderSave();},500);}
-function clearNote(){if(!confirm('Limpar as anotações?'))return;document.getElementById('note').value='';try{localStorage.removeItem('rh_note');}catch(e){}}
+async function clearNote(){if(!await ask('Limpar as anotações?',{ok:'Limpar',danger:true}))return;document.getElementById('note').value='';try{localStorage.removeItem('rh_note');}catch(e){}}
 function noteToTask(){const t=(document.getElementById('note').value||'').trim().split('\n')[0].slice(0,120);toggleNotes(false);openCreate({title:t});}
 function toggleNotes(v){const d=document.getElementById('drawer');const open=v===undefined?!d.classList.contains('open'):v;d.classList.toggle('open',open);if(open)setTimeout(()=>document.getElementById('note').focus(),200);}
 
@@ -958,7 +982,7 @@ async function connectFolder(){
       if(p!=='granted'){toast('alert','Sem permissão, as alterações ficam só no navegador.');paintSync();return;}
     }else{
       const d=await window.showDirectoryPicker({id:'rh-dados',mode:'readwrite'});
-      if(d.name.toLowerCase()!=='dados'&&!confirm(`A pasta escolhida se chama "${d.name}", e não "dados". Usar mesmo assim?`)){paintSync();return;}
+      if(d.name.toLowerCase()!=='dados'&&!await ask(`A pasta escolhida se chama "${d.name}", e não "dados". Usar mesmo assim?`,{ok:'Usar esta pasta'})){paintSync();return;}
       _dir=d;try{await idbSet('pastaDados',_dir);}catch(e){}
     }
     FD.ok=true;FD.need=false;
@@ -1167,6 +1191,8 @@ async function saveMyPw(){
   if(a!==b){er.textContent='As duas senhas não são iguais.';return;}
   const{error}=await SB.c.auth.updateUser({password:a});
   if(error){er.textContent='Não foi possível trocar a senha. Tente outra senha.';return;}
+  // a senha passa a ser só da pessoa: apaga a senha inicial que o RH via
+  try{await SB.c.from('senhas_iniciais').delete().eq('user_id',SB.user.id);}catch(e){}
   closeModal(true);toast('check','Senha alterada.');
 }
 
@@ -1185,30 +1211,44 @@ async function api(action,body){
   if(!r.ok)throw new Error(j.error||'Erro '+r.status);
   return j;
 }
-let LAST_PW=null; // última senha gerada: continua na tela até o administrador ocultar (não é gravada em lugar nenhum)
-function showPw(p){LAST_PW=p;if(mst&&mst.mode==='admin'){mst.w.pw=p;}else{prompt(`Senha de acesso de ${p.email}. Copie e envie para a pessoa:`,p.password);}}
-function hidePw(){if(!confirm('Já copiou e enviou a senha? Depois de ocultar, ela não aparece de novo.'))return;LAST_PW=null;if(mst&&mst.mode==='admin'){mst.w.pw=null;buildAdmin();}}
+/* Senha inicial: o servidor guarda a senha gerada pelo RH até a pessoa trocar a própria senha.
+   O administrador vê e copia quando quiser, na linha de cada pessoa. */
 async function openAdmin(){
-  mst={mode:'admin',dirty:false,w:{users:null,newCos:[],pw:LAST_PW,err:'',busy:false}};
+  mst={mode:'admin',dirty:false,w:{users:null,newCos:[],show:{},err:'',busy:false,senhasOk:true}};
   buildAdmin();openOv();
-  try{const j=await api('list');mst.w.users=j.users;}catch(e){mst.w.err=e.message;mst.w.users=[];}
+  await loadUsers();
   if(mst&&mst.mode==='admin')buildAdmin();
 }
+async function loadUsers(keep){
+  const w=mst.w;
+  try{const j=await api('list');
+    const old=Object.fromEntries((w.users||[]).map(u=>[u.user_id,u.senha]));
+    w.users=j.users.map(u=>({...u,senha:u.senha||(keep&&old[u.user_id])||null}));w.senhasOk=j.senhasOk!==false;
+  }catch(e){w.err=e.message;if(!w.users)w.users=[];}
+}
 function coChips(sel,fn){return Object.values(COS).map(c=>{const on=sel.includes(c.id);return`<button class="co${on?' on':''}" style="${on?'color:'+c.color:''}" onclick="${fn}('${c.id}')" aria-pressed="${on}"><span class="cd" style="background:${c.color}"></span><span style="color:var(--text)">${esc(c.label)}</span></button>`;}).join('');}
+function pwLine(u){
+  if(u.is_admin)return'';
+  if(!u.senha)return`<div class="acc-pw">${ic('lock','s')}<span>Senha definida pela pessoa ou não disponível. Para gerar outra, use Resetar senha.</span></div>`;
+  const on=!!mst.w.show[u.user_id];
+  return`<div class="acc-pw">${ic('lock','s')}<span>Senha:</span><code>${on?esc(u.senha):'••••••••••'}</code>
+    <button class="b sm" onclick="togglePw('${u.user_id}')">${ic(on?'eyeOff':'eye','s')}${on?'Ocultar':'Ver'}</button>
+    <button class="b sm" onclick="copyPw('${u.user_id}')">${ic('card','s')}Copiar e-mail e senha</button></div>`;
+}
 function buildAdmin(){
   const w=mst.w;
-  const pw=w.pw?`<div class="pw">${ic('lock')}<div style="flex-basis:100%;font-size:13px">Senha de acesso de <b>${esc(w.pw.email)}</b>. Copie e envie para a pessoa agora: por segurança, ela não aparece de novo.</div><code id="pw-show">${esc(w.pw.password)}</code><button class="b sm" onclick="copyPw()">${ic('card','s')}Copiar e-mail e senha</button><button class="b sm" onclick="hidePw()">Já enviei, ocultar</button></div>`:'';
   const list=w.users===null?'<div class="hint">Carregando usuários.</div>':(w.users.length?w.users.map(u=>`<div class="acc-row">
       <span class="av">${ic('users','s')}</span>
       <span class="nm">${esc(u.email)}${u.nome?`<br><span class="hint">${esc(u.nome)}</span>`:''}</span>
       ${u.is_admin?`<span class="tagadm">Administrador, vê todas as empresas</span>`:`<div class="cos">${userChips(u)}</div>
       <button class="b sm" onclick="accReset('${u.user_id}')">${ic('undo','s')}Resetar senha</button>
       <button class="x" onclick="accDel('${u.user_id}')" title="Remover acesso" aria-label="Remover acesso">${ic('trash','s')}</button>`}
+      ${pwLine(u)}
     </div>`).join(''):'<div class="hint">Nenhum usuário ainda.</div>');
   document.getElementById('md').innerHTML=`<div class="md-h">${ic('users','l')}<div style="flex:1;font-size:19px;font-weight:700;padding:4px 8px">Usuários e acessos</div><button class="x" onclick="closeModal(true)" aria-label="Fechar">${ic('x')}</button></div>
   <div style="padding:4px 20px 18px">
     ${w.err?`<div class="lg-err" style="margin-bottom:8px">${esc(w.err)}</div>`:''}
-    ${pw}
+    ${w.senhasOk?'':`<div class="lg-err" style="margin-bottom:8px">As senhas ainda não ficam guardadas: rode o arquivo supabase/3-senhas-iniciais.sql no Supabase. Até lá, copie a senha antes de fechar esta janela.</div>`}
     <div class="sec-t" style="margin-top:6px">${ic('userPlus')}Liberar acesso</div>
     <div class="fl" style="align-items:flex-end">
       <div class="fld" style="flex:2;min-width:220px"><label for="nu-email">E-mail</label><input id="nu-email" class="in" type="email" placeholder="nome@empresa.com.br"/></div>
@@ -1217,20 +1257,29 @@ function buildAdmin(){
     <div class="fld" style="margin-top:10px"><label>Empresas que a pessoa vai ver</label><div class="cos" id="nu-cos">${coChips(w.newCos,'nuToggle')}</div></div>
     <div style="margin-top:12px"><button class="b pri" onclick="accCreate()" ${w.busy?'disabled':''}>${ic('check')}Liberar acesso e gerar senha</button></div>
     <div class="sec-t" style="margin-top:22px">${ic('users')}Pessoas com acesso</div>
-    <div class="hint" style="margin-bottom:4px">Clique numa empresa para liberar ou tirar o acesso. A mudança vale na hora.</div>
+    <div class="hint" style="margin-bottom:4px">Clique numa empresa para liberar ou tirar o acesso. A mudança vale na hora. A senha gerada fica disponível aqui até a pessoa trocar a própria senha.</div>
     ${list}
   </div>`;
 }
 function userChips(u){const sel=u.empresas||[];return Object.values(COS).map(c=>{const on=sel.includes(c.id);return`<button class="co${on?' on':''}" style="${on?'color:'+c.color:''}" onclick="accToggle('${u.user_id}','${c.id}')" aria-pressed="${on}"><span class="cd" style="background:${c.color}"></span><span style="color:var(--text)">${esc(c.label)}</span></button>`;}).join('');}
 function nuToggle(c){const l=mst.w.newCos;const i=l.indexOf(c);if(i>=0)l.splice(i,1);else l.push(c);document.getElementById('nu-cos').innerHTML=coChips(l,'nuToggle');}
+function togglePw(uid){const s=mst.w.show;s[uid]=!s[uid];buildAdmin();}
+/* depois de gerar uma senha: atualiza a lista e já deixa a senha da pessoa à mostra */
+async function afterPw(email,senha){
+  const w=mst.w;
+  await loadUsers(true);
+  const u=(w.users||[]).find(x=>x.email===email);
+  if(u){if(!u.senha)u.senha=senha;w.show[u.user_id]=true;}
+  toast('check','Senha gerada. Ela fica disponível na linha da pessoa.',4000);
+}
 async function accCreate(){
   const w=mst.w;const email=document.getElementById('nu-email').value.trim().toLowerCase(),nome=document.getElementById('nu-nome').value.trim();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){w.err='Digite um e-mail válido.';buildAdmin();return;}
   if(!w.newCos.length){w.err='Marque pelo menos uma empresa.';buildAdmin();return;}
   w.busy=true;w.err='';buildAdmin();
-  try{const j=await api('create',{email,nome,empresas:w.newCos});showPw({email,password:j.password});w.newCos=[];w.users=(await api('list')).users;}
+  try{const j=await api('create',{email,nome,empresas:w.newCos});w.newCos=[];if(mst&&mst.mode==='admin')await afterPw(email,j.password);}
   catch(e){w.err=e.message;}
-  w.busy=false;if(mst&&mst.mode==='admin'){buildAdmin();document.getElementById('md').scrollTop=0;}
+  w.busy=false;if(mst&&mst.mode==='admin')buildAdmin();
 }
 async function accToggle(uid,c){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
@@ -1240,20 +1289,20 @@ async function accToggle(uid,c){
 }
 async function accReset(uid){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
-  if(!confirm(`Gerar uma nova senha para ${u.email}? A senha atual deixa de funcionar.`))return;
-  try{const j=await api('reset',{user_id:uid});showPw({email:u.email,password:j.password});w.err='';}catch(e){w.err=e.message;}
-  if(mst&&mst.mode==='admin'){buildAdmin();document.getElementById('md').scrollTop=0;}
+  if(!await ask(`Gerar uma nova senha para ${u.email}?\nA senha atual deixa de funcionar.`,{title:'Resetar senha',ok:'Gerar nova senha',icon:'lock'}))return;
+  try{const j=await api('reset',{user_id:uid});w.err='';if(mst&&mst.mode==='admin')await afterPw(u.email,j.password);}catch(e){w.err=e.message;}
+  if(mst&&mst.mode==='admin')buildAdmin();
 }
 async function accDel(uid){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
-  if(!confirm(`Remover o acesso de ${u.email}? A pessoa não consegue mais entrar. As tarefas continuam.`))return;
+  if(!await ask(`Remover o acesso de ${u.email}?\nA pessoa não consegue mais entrar. As tarefas continuam.`,{title:'Remover acesso',ok:'Remover acesso',danger:true}))return;
   try{await api('delete',{user_id:uid});w.users=w.users.filter(x=>x.user_id!==uid);w.err='';toast('trash','Acesso removido.');}catch(e){w.err=e.message;}
   buildAdmin();
 }
-async function copyPw(){
-  const p=LAST_PW;if(!p)return;
-  const t=`Acesso ao quadro de tarefas do RH\nEndereço: ${CFG.siteUrl||location.origin}\nE-mail: ${p.email}\nSenha: ${p.password}`;
-  try{await navigator.clipboard.writeText(t);toast('check','Copiado. Cole na mensagem para a pessoa.');}catch(e){toast('alert','Não foi possível copiar. Selecione a senha e copie.');}
+async function copyPw(uid){
+  const u=(mst?.w?.users||[]).find(x=>x.user_id===uid);if(!u||!u.senha)return;
+  const t=`Acesso ao quadro de tarefas do RH\nEndereço: ${CFG.siteUrl||location.origin}\nE-mail: ${u.email}\nSenha: ${u.senha}`;
+  try{await navigator.clipboard.writeText(t);toast('check','Copiado. Cole na mensagem para a pessoa.');}catch(e){toast('alert','Não foi possível copiar. Clique em Ver e copie a senha.');}
 }
 
 /* ══════════ INÍCIO ══════════ */

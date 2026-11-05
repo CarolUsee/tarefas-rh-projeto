@@ -37,6 +37,12 @@ export default async function handler(req, res) {
   const { action } = body;
   const empresasValidas = l => Array.isArray(l) && l.every(x => EMPRESAS.includes(x));
 
+  // Guarda a senha gerada para o administrador ver depois. Se a tabela ainda não existir, só avisa no log.
+  async function guardarSenha(user_id, senha) {
+    const { error } = await sb.from('senhas_iniciais').upsert({ user_id, senha, gerada_em: new Date().toISOString() });
+    if (error) console.error('senhas_iniciais:', error.message);
+  }
+
   async function alvo(id) {
     const { data } = await sb.from('perfis').select('user_id,email,is_admin').eq('user_id', id).maybeSingle();
     return data;
@@ -46,7 +52,11 @@ export default async function handler(req, res) {
     if (action === 'list') {
       const { data, error } = await sb.from('perfis').select('user_id,email,nome,is_admin,empresas').order('is_admin', { ascending: false }).order('email');
       if (error) throw error;
-      return res.json({ users: data });
+      // Senha inicial gerada pelo RH (some quando a pessoa troca a própria senha)
+      const { data: senhas, error: es } = await sb.from('senhas_iniciais').select('user_id,senha');
+      if (es) console.error('senhas_iniciais:', es.message);
+      const mapa = Object.fromEntries((senhas || []).map(s => [s.user_id, s.senha]));
+      return res.json({ users: data.map(u => ({ ...u, senha: mapa[u.user_id] || null })), senhasOk: !es });
     }
 
     if (action === 'create') {
@@ -61,6 +71,7 @@ export default async function handler(req, res) {
       }
       const { error: e2 } = await sb.from('perfis').insert({ user_id: novo.user.id, email, nome: String(body.nome || '').trim() || null, is_admin: false, empresas: body.empresas });
       if (e2) { await sb.auth.admin.deleteUser(novo.user.id); throw e2; }
+      await guardarSenha(novo.user.id, senha);
       return res.json({ password: senha });
     }
 
@@ -81,6 +92,7 @@ export default async function handler(req, res) {
       const senha = gerarSenha();
       const { error } = await sb.auth.admin.updateUserById(t.user_id, { password: senha });
       if (error) throw error;
+      await guardarSenha(t.user_id, senha);
       return res.json({ password: senha });
     }
 
