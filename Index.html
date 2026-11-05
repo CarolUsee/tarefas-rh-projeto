@@ -453,7 +453,7 @@ let MODE='local'; // 'local' | 'login' | 'loading' | 'online'
 function save(){
   if(MODE==='loading'||MODE==='login')return;
   stampChanges();
-  if(MODE==='online'){syncCloud();scheduleFolderSave();return;}
+  if(MODE==='online'){syncCloud();return;} // online: salva só no banco (Supabase), sem pasta local
   try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){toast('alert','Não foi possível salvar no navegador.');}
   scheduleFolderSave();
 }
@@ -927,7 +927,7 @@ function openBackupMenu(e){
   e.stopPropagation();const m=document.getElementById('menu');
   let h=`<div class="mh">Backup das tarefas</div><button onclick="closeMenu();exportBackup()">${ic('download')}Baixar backup (.json)</button>`;
   if(isAdmin())h+=`<button onclick="closeMenu();pickImport()">${ic('upload')}Importar backup</button>`;
-  if(FS_OK)h+=`<button onclick="closeMenu();${_dir?'changeFolder()':'connectFolder()'}">${ic('folder')}${_dir?'Trocar a pasta de salvamento':'Escolher a pasta dados'}</button>`;
+  if(FS_OK&&MODE==='local')h+=`<button onclick="closeMenu();${_dir?'changeFolder()':'connectFolder()'}">${ic('folder')}${_dir?'Trocar a pasta de salvamento':'Escolher a pasta dados'}</button>`;
   h+=`<div class="mh">Ao importar, entram as tarefas novas e as que foram alteradas mais recentemente. Nada é apagado.</div>`;
   m.innerHTML=h;const r=e.currentTarget.getBoundingClientRect();m.style.top=(r.bottom+6)+'px';m.style.left=Math.max(8,Math.min(r.right-260,innerWidth-268))+'px';m.classList.add('open');
 }
@@ -945,7 +945,7 @@ function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('rh_tarefas
 async function idbGet(k){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('kv').objectStore('kv').get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error);});}
 async function idbSet(k,v){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
 async function initFolder(){
-  if(!FS_OK||(MODE!=='local'&&MODE!=='online')){paintSync();return;}
+  if(!FS_OK||MODE!=='local'){paintSync();return;}
   try{_dir=(await idbGet('pastaDados'))||null;}catch(e){_dir=null;}
   if(_dir){let p='prompt';try{p=await _dir.queryPermission({mode:'readwrite'});}catch(e){}
     if(p==='granted'){FD.ok=true;if(MODE==='local')await restoreIfEmpty();else scheduleFolderSave();}else FD.need=true;}
@@ -978,7 +978,7 @@ async function restoreIfEmpty(){
     render();toast('folder','Tarefas recuperadas da pasta dados.',4500);return true;
   }catch(e){return false;}
 }
-function scheduleFolderSave(){if(!FD.ok||(MODE!=='local'&&MODE!=='online'))return;clearTimeout(FD.t);FD.pend=true;paintSync();FD.t=setTimeout(()=>{FD.pend=false;writeFolder();},400);}
+function scheduleFolderSave(){if(!FD.ok||MODE!=='local')return;clearTimeout(FD.t);FD.pend=true;paintSync();FD.t=setTimeout(()=>{FD.pend=false;writeFolder();},400);}
 async function writeFolder(){
   if(!FD.ok||!_dir)return;
   if(FD.writing){FD.again=true;return;}
@@ -1022,13 +1022,13 @@ function paintSync(){
     const busy=SB.syncing||SB.again;err=SB.err;
     parts.push(ic(SB.err?'alert':'cloud','s')+`<span>${SB.err?'Erro ao salvar online':busy?'Salvando':'Salvo online'}</span>`);
   }else if(MODE==='loading'||MODE==='login'){parts.push(ic('cloud','s')+'<span>Conectando</span>');}
-  if(MODE==='local'||MODE==='online'){
+  if(MODE==='local'){
     if(FS_OK&&FD.ok){err=err||FD.err;parts.push(ic(FD.err?'alert':'folder','s')+`<span>${FD.err?'Erro na pasta':(FD.writing||FD.pend)?'Gravando na pasta':'Pasta '+esc(_dir.name)}</span>`);}
     else if(MODE==='local'&&!FS_OK)parts.push(ic('monitor','s')+'<span>Neste navegador</span>');
   }
   el.className='sync'+(err?' err':'');el.innerHTML=parts.join('<span style="opacity:.4">|</span>');
   el.title=FD.last?'Última gravação na pasta às '+FD.last.toLocaleTimeString('pt-BR'):'';
-  const showBar=FS_OK&&!FD.ok&&(MODE==='local'||(MODE==='online'&&isAdmin()));
+  const showBar=FS_OK&&!FD.ok&&MODE==='local';
   fb.innerHTML=showBar?`<div class="fbar">${ic('folder')}<span>${FD.need?'Clique em Reativar para voltar a gravar tudo na pasta <b>dados</b>. O navegador pede essa confirmação quando a página é aberta de novo.':'Escolha a pasta <b>C:\\Developer\\tarefas-rh-projeto\\dados</b> para que cada alteração seja gravada lá também.'}</span><button class="b pri sm" onclick="connectFolder()">${ic('folder')}${FD.need?'Reativar pasta dados':'Escolher pasta dados'}</button></div>`:'';
 }
 
@@ -1185,8 +1185,11 @@ async function api(action,body){
   if(!r.ok)throw new Error(j.error||'Erro '+r.status);
   return j;
 }
+let LAST_PW=null; // última senha gerada: continua na tela até o administrador ocultar (não é gravada em lugar nenhum)
+function showPw(p){LAST_PW=p;if(mst&&mst.mode==='admin'){mst.w.pw=p;}else{prompt(`Senha de acesso de ${p.email}. Copie e envie para a pessoa:`,p.password);}}
+function hidePw(){if(!confirm('Já copiou e enviou a senha? Depois de ocultar, ela não aparece de novo.'))return;LAST_PW=null;if(mst&&mst.mode==='admin'){mst.w.pw=null;buildAdmin();}}
 async function openAdmin(){
-  mst={mode:'admin',dirty:false,w:{users:null,newCos:[],pw:null,err:'',busy:false}};
+  mst={mode:'admin',dirty:false,w:{users:null,newCos:[],pw:LAST_PW,err:'',busy:false}};
   buildAdmin();openOv();
   try{const j=await api('list');mst.w.users=j.users;}catch(e){mst.w.err=e.message;mst.w.users=[];}
   if(mst&&mst.mode==='admin')buildAdmin();
@@ -1194,7 +1197,7 @@ async function openAdmin(){
 function coChips(sel,fn){return Object.values(COS).map(c=>{const on=sel.includes(c.id);return`<button class="co${on?' on':''}" style="${on?'color:'+c.color:''}" onclick="${fn}('${c.id}')" aria-pressed="${on}"><span class="cd" style="background:${c.color}"></span><span style="color:var(--text)">${esc(c.label)}</span></button>`;}).join('');}
 function buildAdmin(){
   const w=mst.w;
-  const pw=w.pw?`<div class="pw">${ic('lock')}<div style="flex-basis:100%;font-size:13px">Senha de acesso de <b>${esc(w.pw.email)}</b>. Copie e envie para a pessoa agora: por segurança, ela não aparece de novo.</div><code id="pw-show">${esc(w.pw.password)}</code><button class="b sm" onclick="copyPw()">${ic('card','s')}Copiar e-mail e senha</button></div>`:'';
+  const pw=w.pw?`<div class="pw">${ic('lock')}<div style="flex-basis:100%;font-size:13px">Senha de acesso de <b>${esc(w.pw.email)}</b>. Copie e envie para a pessoa agora: por segurança, ela não aparece de novo.</div><code id="pw-show">${esc(w.pw.password)}</code><button class="b sm" onclick="copyPw()">${ic('card','s')}Copiar e-mail e senha</button><button class="b sm" onclick="hidePw()">Já enviei, ocultar</button></div>`:'';
   const list=w.users===null?'<div class="hint">Carregando usuários.</div>':(w.users.length?w.users.map(u=>`<div class="acc-row">
       <span class="av">${ic('users','s')}</span>
       <span class="nm">${esc(u.email)}${u.nome?`<br><span class="hint">${esc(u.nome)}</span>`:''}</span>
@@ -1225,9 +1228,9 @@ async function accCreate(){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){w.err='Digite um e-mail válido.';buildAdmin();return;}
   if(!w.newCos.length){w.err='Marque pelo menos uma empresa.';buildAdmin();return;}
   w.busy=true;w.err='';buildAdmin();
-  try{const j=await api('create',{email,nome,empresas:w.newCos});w.pw={email,password:j.password};w.newCos=[];w.users=(await api('list')).users;}
+  try{const j=await api('create',{email,nome,empresas:w.newCos});showPw({email,password:j.password});w.newCos=[];w.users=(await api('list')).users;}
   catch(e){w.err=e.message;}
-  w.busy=false;buildAdmin();
+  w.busy=false;if(mst&&mst.mode==='admin'){buildAdmin();document.getElementById('md').scrollTop=0;}
 }
 async function accToggle(uid,c){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
@@ -1238,8 +1241,8 @@ async function accToggle(uid,c){
 async function accReset(uid){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
   if(!confirm(`Gerar uma nova senha para ${u.email}? A senha atual deixa de funcionar.`))return;
-  try{const j=await api('reset',{user_id:uid});w.pw={email:u.email,password:j.password};w.err='';}catch(e){w.err=e.message;}
-  buildAdmin();
+  try{const j=await api('reset',{user_id:uid});showPw({email:u.email,password:j.password});w.err='';}catch(e){w.err=e.message;}
+  if(mst&&mst.mode==='admin'){buildAdmin();document.getElementById('md').scrollTop=0;}
 }
 async function accDel(uid){
   const w=mst.w;const u=w.users.find(x=>x.user_id===uid);if(!u)return;
@@ -1248,7 +1251,7 @@ async function accDel(uid){
   buildAdmin();
 }
 async function copyPw(){
-  const p=mst.w.pw;if(!p)return;
+  const p=LAST_PW;if(!p)return;
   const t=`Acesso ao quadro de tarefas do RH\nEndereço: ${CFG.siteUrl||location.origin}\nE-mail: ${p.email}\nSenha: ${p.password}`;
   try{await navigator.clipboard.writeText(t);toast('check','Copiado. Cole na mensagem para a pessoa.');}catch(e){toast('alert','Não foi possível copiar. Selecione a senha e copie.');}
 }
