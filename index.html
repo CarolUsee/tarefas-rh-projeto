@@ -148,6 +148,13 @@ input,select,textarea{font:inherit;color:var(--text)}
 .c-chk:hover{border-color:var(--green);color:var(--green)}
 .card.done .c-chk{opacity:1;background:var(--green);border-color:var(--green);color:#fff}
 .c-pin{color:var(--amber)}
+.card.pinned{box-shadow:inset 3px 0 0 var(--amber),var(--shadow)}
+.list.l-pin{background:var(--amber-bg);box-shadow:inset 0 0 0 2px var(--amber),var(--shadow)}
+.l-note{display:flex;align-items:center;gap:6px;padding:9px 14px 11px;font-size:12px;font-weight:600;color:var(--muted);border-top:1px solid var(--line)}
+.list>.l-body:last-child{padding-bottom:12px;border-radius:0 0 var(--r-list) var(--r-list)} /* lista sem rodapé: o último cartão não fica colado/cortado */
+.list.l-pin .l-title .ic{color:var(--amber)}
+.rep{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;font-weight:600;cursor:pointer}
+.rep input{width:17px;height:17px;accent-color:var(--green)}
 @media (hover:none){.c-chk{opacity:1}}
 
 /* ── Calendar ── */
@@ -165,7 +172,31 @@ input,select,textarea{font:inherit;color:var(--text)}
 .chip .cd{width:6px;height:6px;border-radius:2px;flex-shrink:0}
 .chip.d{color:var(--faint);text-decoration:line-through}
 .more{font-size:11.5px;color:var(--muted);font-weight:600;padding-left:4px}
-.day-panel{margin-top:12px;max-width:1200px}
+/* visão Mês: calendário à esquerda, detalhes do dia à direita */
+.mes{display:flex;gap:14px;align-items:stretch;height:100%;min-height:0}
+.mes .cal{flex:1;min-width:0;max-width:none;display:flex;flex-direction:column}
+.mes .cal-g{flex:1;gap:10px;padding:2px 12px 12px;grid-auto-rows:minmax(140px,auto);overflow-y:auto;align-content:start}
+.mes .cal-h{padding:12px 12px 8px}
+.cell{text-align:left;font:inherit;color:inherit;border:0;padding:8px;gap:5px;overflow:hidden;justify-content:flex-start}
+.cell .chip{flex-shrink:0;padding:3px 6px}
+.cell.wk:not(.out){background:var(--list-h)}
+.cell.picked{outline:2px solid var(--lime);outline-offset:-1px}
+.cell .dn{min-width:22px;text-align:center}
+.cell-c{font-size:11px;font-weight:700;padding:0 6px;border-radius:10px;background:var(--list);color:var(--muted)}
+.cell-c.all{background:var(--green-bg);color:var(--green)}
+.chip .ct{overflow:hidden;text-overflow:ellipsis}
+.chip.ov{background:var(--red);color:#fff}
+.chip.pin{box-shadow:inset 2px 0 0 var(--amber)}
+.day-panel{width:360px;flex-shrink:0;background:var(--list);border-radius:var(--r-list);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;max-height:100%}
+.dp-h{display:flex;align-items:center;gap:12px;padding:14px 12px 8px 14px}
+.dp-d{font-size:30px;font-weight:800;line-height:1;min-width:46px;height:46px;border-radius:10px;display:grid;place-items:center;background:var(--lime);color:var(--lime-ink)}
+.dp-w{font-weight:700;font-size:15px;text-transform:capitalize}
+.dp-m{font-size:12.5px;color:var(--muted)}
+.dp-s{display:flex;gap:14px;padding:4px 14px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:6px}
+.dp-s b{color:var(--text);font-size:14px;margin-right:4px}
+.dp-s .r b{color:var(--red)}
+.dp-s .g b{color:var(--green)}
+.day-panel .l-body{flex:1}
 
 /* ── Notes drawer ── */
 .drawer{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:92vw;background:var(--modal);z-index:40;box-shadow:var(--shadow-lg);transform:translateX(105%);transition:transform .22s ease;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));gap:10px}
@@ -232,7 +263,9 @@ textarea.in{width:100%;resize:vertical;min-height:84px;line-height:1.5}
 .cm{display:flex;gap:10px;margin-top:12px}
 .cm .av{margin:0;width:30px;height:30px;border-color:transparent}
 .cm-b{flex:1;min-width:0}
-.cm-n{font-size:12.5px;color:var(--muted)}
+.cm-n{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cm-del{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--muted);padding:2px 6px;border-radius:5px}
+.cm-del:hover{color:var(--red);background:var(--list-h)}
 .cm-n b{color:var(--text);margin-right:6px}
 .cm-t{background:var(--card);border-radius:8px;padding:8px 10px;margin-top:3px;box-shadow:var(--shadow);white-space:pre-wrap;word-break:break-word}
 .mem{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -294,7 +327,10 @@ textarea.in{width:100%;resize:vertical;min-height:84px;line-height:1.5}
   .counts{display:none}
   .brand span{display:none}
   .cell{min-height:64px}
-  .cell .chip{display:none}
+  .cell .chip,.cell .more{display:none}
+  .mes{flex-direction:column;height:auto}
+  .mes .cal-g{grid-auto-rows:64px;overflow:visible}
+  .day-panel{width:100%;max-height:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -363,7 +399,7 @@ const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ago
 const PRI_ORD={alta:0,media:1,baixa:2};
 const PRI_LBL={alta:'Alta',media:'Média',baixa:'Baixa'};
 const PRI_COLOR={alta:'#D93F45',media:'#E0A100',baixa:'#1F8F5A'};
-const STATUS=[{id:'pendente',label:'A fazer',ic:'circle'},{id:'andamento',label:'Em andamento',ic:'play'},{id:'aguardando',label:'Aguardando',ic:'clock'},{id:'concluido',label:'Concluído',ic:'checkCircle'}];
+const STATUS=[{id:'pendente',label:'A fazer',ic:'circle'},{id:'concluido',label:'Concluído',ic:'checkCircle'}];
 const STATUS_LBL=Object.fromEntries(STATUS.map(s=>[s.id,s.label]));
 
 /* ══════════ ÍCONES (SVG, sem emojis) ══════════ */
@@ -501,21 +537,66 @@ function newId(i){return Date.now()+(i||0);}
 /* ══════════ REGRAS DAS ATIVIDADES ══════════ */
 function isActive(a){return a.active!==false;}
 function isRec(a){return a.schedType&&a.schedType!=='date';}
-function statusOf(a){return['andamento','aguardando','concluido'].includes(a.status)?a.status:'pendente';}
+// Só existem duas situações: A fazer e Concluído ("Em andamento" e "Aguardando" antigos viram A fazer)
+function statusOf(a){return a.status==='concluido'?'concluido':'pendente';}
+function isMonthly(a){return a.schedType==='mensal';}
+/* Datas de uma tarefa: início e data final (opcional).
+   Tarefas antigas só têm dueDate: início = fim = essa data. Sem data final, a tarefa fica pendente a partir do início e não atrasa. */
+function tStart(a){return a.startDate||a.dueDate||null;}
+function tEnd(a){return a.dueDate||null;}
+/* "Se repete": todo mês, do dia inicial ao dia final (ou só a partir do dia inicial). Fica pendente até o OK daquele mês. */
+function ymOf(ds){return ds.slice(0,7);}
+function monthWin(a,ym){
+  const[y,m]=ym.split('-').map(Number);
+  if(a.startDate&&ym<ymOf(a.startDate))return null; // ainda não começou a repetir
+  const last=new Date(y,m,0).getDate();
+  const sd=Math.min(Number(a.monthDay)||1,last);
+  const ed=a.startDate?(a.monthDayEnd?Math.min(Number(a.monthDayEnd),last):null):sd; // antigas: só o dia
+  const f=d=>`${ym}-${String(d).padStart(2,'0')}`;
+  return{s:f(sd),e:ed?f(ed):null};
+}
+function monthDoneDate(id,ym){const p=String(id)+'-'+ym+'-';const k=Object.keys(data.comps).find(x=>data.comps[x]&&x.startsWith(p)&&x.length===p.length+2);return k?k.slice(-10):null;}
+function isMonthDone(a,ym){return!!monthDoneDate(a.id,ym);}
+function monthStarted(a,ds){const w=monthWin(a,ymOf(ds));return!!w&&ds>=w.s;}
 function isDueOn(a,date){
-  if(a.schedType==='date')return a.dueDate===fmtD(date);
+  const ds=fmtD(date);
+  if(a.schedType==='date'){const s=tStart(a),e=tEnd(a);if(!s)return false;return e?ds>=s&&ds<=e:ds===s;}
   if(a.schedType==='diaria')return true;
   if(a.schedType==='semanal')return date.getDay()===Number(a.weekDay);
-  if(a.schedType==='mensal')return date.getDate()===Number(a.monthDay);
+  if(isMonthly(a)){const w=monthWin(a,ymOf(ds));return!!w&&ds>=w.s&&ds<=(w.e||w.s);}
   return false;
 }
 function ck(id,ds){return id+'-'+ds;}
 function isDone(id,ds){return!!data.comps[ck(id,ds)];}
 function isExcepted(id,ds){return!!data.excepts[ck(id,ds)];}
-function isOverdue(a){return!isRec(a)&&isActive(a)&&a.dueDate&&a.dueDate<TODAY&&statusOf(a)!=='concluido';}
-function freqLabel(a){if(a.schedType==='diaria')return'Diária';if(a.schedType==='semanal')return'Toda '+WDAYS[a.weekDay];if(a.schedType==='mensal')return'Todo dia '+a.monthDay;return a.dueDate?fmtDisp(a.dueDate):'Sem data';}
+/* concluída na data/mês do cartão */
+function doneFor(a,ds){if(isMonthly(a))return isMonthDone(a,ymOf(ds||TODAY));if(isRec(a))return isDone(a.id,ds||TODAY);return statusOf(a)==='concluido';}
+function isOverdue(a){
+  if(!isActive(a))return false;
+  if(isMonthly(a)){const w=monthWin(a,ymOf(TODAY));return!!w&&!!w.e&&w.e<TODAY&&!isMonthDone(a,ymOf(TODAY));}
+  if(isRec(a))return false;
+  const e=tEnd(a);return!!e&&e<TODAY&&statusOf(a)!=='concluido';
+}
+/* visão Hoje: só o que tem a data de hoje ou um intervalo que inclui hoje (o mesmo que o calendário mostra no dia).
+   Retorna 'hoje' | 'rot' (rotina semanal/diária) | 'feita' | null */
+function todayBucket(a){
+  if(!isActive(a)||!isDueOn(a,NOW))return null;
+  if(isRec(a)&&isExcepted(a.id,TODAY))return null;
+  if(doneFor(a,TODAY))return'feita';
+  return isRec(a)&&!isMonthly(a)?'rot':'hoje';
+}
+function dayLbl(ds){return fmtDisp(ds);}
+function rangeLbl(s,e){
+  if(!e)return'a partir de '+dayLbl(s);
+  if(s===e)return dayLbl(s);
+  const ps=parseD(s),pe=parseD(e);
+  return ps.getMonth()===pe.getMonth()&&ps.getFullYear()===pe.getFullYear()?`${ps.getDate()} a ${dayLbl(e)}`:`${dayLbl(s)} a ${dayLbl(e)}`;
+}
+function freqLabel(a){if(a.schedType==='diaria')return'Diária';if(a.schedType==='semanal')return'Toda '+WDAYS[a.weekDay];if(isMonthly(a)){const e=a.startDate?a.monthDayEnd:a.monthDay;return e&&Number(e)!==Number(a.monthDay)?`Todo mês, dia ${a.monthDay} a ${e}`:e?'Todo dia '+a.monthDay:`Todo mês, a partir do dia ${a.monthDay}`;}const s=tStart(a);return s?rangeLbl(s,tEnd(a)):'Sem data';}
 function byPri(x,y){return(PRI_ORD[x.pri]??1)-(PRI_ORD[y.pri]??1);}
-function byDue(x,y){const dx=x.dueDate||'9999',dy=y.dueDate||'9999';return dx<dy?-1:dx>dy?1:byPri(x,y);}
+function sortDate(a){if(isMonthly(a)){const w=monthWin(a,ymOf(TODAY));return w?(w.e||w.s):'9999';}return tEnd(a)||tStart(a)||'9999';}
+function byDue(x,y){const dx=sortDate(x),dy=sortDate(y);return dx<dy?-1:dx>dy?1:byPri(x,y);}
+function byPin(x,y){return(data.pinned[y.a.id]?1:0)-(data.pinned[x.a.id]?1:0);}
 
 /* ══════════ ESTADO DA TELA ══════════ */
 const st={board:'all',view:'quadro',priF:'todas',q:'',weekOff:0,mY:NOW.getFullYear(),mM:NOW.getMonth(),mSel:null,showAllDone:false};
@@ -572,7 +653,7 @@ function renderBoards(){
   if(!tabs.some(t=>t.id===st.board))st.board='all';
   document.getElementById('boards').innerHTML=tabs.map(t=>{
     const ids=t.id==='all'?CIDS:[t.id];
-    const acts=viewActs().filter(x=>ids.includes(x.cid)&&isActive(x.a)&&!(statusOf(x.a)==='concluido'&&!isRec(x.a)));
+    const acts=viewActs().filter(x=>ids.includes(x.cid)&&isActive(x.a)&&!((isMonthly(x.a)||!isRec(x.a))&&doneFor(x.a,TODAY)));
     const ov=acts.some(x=>isOverdue(x.a));
     return`<button class="bt${st.board===t.id?' on':''}" onclick="setBoard('${t.id}')">${t.color?`<span class="dot" style="background:${t.color}"></span>`:ic('layers','s')}${esc(t.label)}<span class="n">${acts.length}</span>${ov?`<span class="warn" title="Há tarefas atrasadas">${ic('alert','s')}</span>`:''}</button>`;
   }).join('');
@@ -592,8 +673,8 @@ function renderSub(){
   });
   const acts=viewActs().filter(({a,cid})=>boardCids().includes(cid)&&isActive(a));
   const ov=acts.filter(x=>isOverdue(x.a)).length;
-  const hoje=acts.filter(x=>isRec(x.a)?(isDueOn(x.a,NOW)&&!isExcepted(x.a.id,TODAY)&&!isDone(x.a.id,TODAY)):(x.a.dueDate===TODAY&&statusOf(x.a)!=='concluido')).length;
-  const abertas=acts.filter(x=>!isRec(x.a)&&statusOf(x.a)!=='concluido').length;
+  const hoje=acts.filter(x=>['hoje','rot'].includes(todayBucket(x.a))).length;
+  const abertas=acts.filter(x=>isMonthly(x.a)?(monthStarted(x.a,TODAY)&&!isMonthDone(x.a,ymOf(TODAY))):(!isRec(x.a)&&statusOf(x.a)!=='concluido')).length;
   h+=`<div class="counts"><span><b>${abertas}</b>abertas</span><span class="r"><b>${ov}</b>atrasadas</span><span><b>${hoje}</b>para hoje</span></div>`;
   document.getElementById('sub').innerHTML=h;
 }
@@ -608,12 +689,17 @@ function labelsHTML(a,cid){
 }
 function cardHTML(a,cid,o={}){
   const ds=o.ds||TODAY;
-  const rec=isRec(a);
-  const done=rec?isDone(a.id,ds):statusOf(a)==='concluido';
+  const rec=isRec(a),mon=isMonthly(a);
+  const done=doneFor(a,ds);
   const pinned=!!data.pinned[a.id];
   let due='';
-  if(rec)due=`<span>${ic('repeat','s')}${esc(freqLabel(a))}</span>`;
-  else if(a.dueDate){const ov=isOverdue(a),td=a.dueDate===TODAY;due=`<span class="due ${done?'due-ok':ov?'due-ov':td?'due-td':''}">${ic('clock','s')}${fmtDisp(a.dueDate)}${ov?' · atrasada':td?' · hoje':''}</span>`;}
+  if(mon){
+    const w=monthWin(a,ymOf(ds));const ov=ymOf(ds)===ymOf(TODAY)&&isOverdue(a);const on=w&&ds>=w.s;
+    const st_=done?' · feita este mês':ov?' · atrasada':on?' · pendente':'';
+    due=`<span class="due ${done?'due-ok':ov?'due-ov':on?'due-td':''}">${ic('repeat','s')}${esc(freqLabel(a))}${st_}</span>`;
+  }
+  else if(rec)due=`<span>${ic('repeat','s')}${esc(freqLabel(a))}</span>`;
+  else if(tStart(a)){const s=tStart(a),e=tEnd(a),ov=isOverdue(a),td=!ov&&(e?TODAY>=s&&TODAY<=e:s===TODAY);due=`<span class="due ${done?'due-ok':ov?'due-ov':td?'due-td':''}">${ic('clock','s')}${esc(rangeLbl(s,e))}${ov?' · atrasada':e===TODAY?' · hoje':''}</span>`;}
   const cl=a.checklist||[],cm=a.comments||[],mb=a.members||[];
   const meta=[due,
     pinned?`<span class="c-pin" title="Fixada">${ic('pin','s')}</span>`:'',
@@ -623,9 +709,9 @@ function cardHTML(a,cid,o={}){
     rec&&!isActive(a)?`<span>${ic('pause','s')}Pausada</span>`:''
   ].join('');
   const canDrag=!rec&&!o.noDrag;
-  const chkCall=rec?`toggleRecDone('${a.id}','${ds}',event)`:`toggleTaskDone('${a.id}',event)`;
-  const showChk=!rec||isDueOn(a,parseD(ds));
-  return`<div class="card${done?' done':''}${rec&&!isActive(a)?' paused':''}" ${canDrag?`draggable="true" ondragstart="dragStart(event,'${a.id}')" ondragend="dragEnd(event)"`:''} onclick="openEdit('${a.id}','${ds}')">
+  const chkCall=mon?`toggleMonthDone('${a.id}','${ds}',event)`:rec?`toggleRecDone('${a.id}','${ds}',event)`:`toggleTaskDone('${a.id}',event)`;
+  const showChk=mon?(done||monthStarted(a,ds)):(!rec||isDueOn(a,parseD(ds)));
+  return`<div class="card${done?' done':''}${pinned&&!done?' pinned':''}${rec&&!isActive(a)?' paused':''}" ${canDrag?`draggable="true" ondragstart="dragStart(event,'${a.id}')" ondragend="dragEnd(event)"`:''} onclick="openEdit('${a.id}','${ds}')">
     <div class="c-labels">${labelsHTML(a,cid)}</div>
     <div class="c-title">${esc(a.title)}</div>
     <div class="c-foot"><div class="c-meta">${meta}</div></div>
@@ -635,63 +721,67 @@ function cardHTML(a,cid,o={}){
 function listHTML(title,icon,items,o={}){
   const body=items.length?items.join(''):`<div class="empty-l">${o.empty||'Nada por aqui'}</div>`;
   const drop=o.drop?`ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropOn(event,'${o.drop}')"`:'';
-  return`<section class="list" ${drop}>
+  return`<section class="list${o.cls?' '+o.cls:''}" ${drop}>
     <div class="l-hdr"><div class="l-title">${icon?ic(icon):''}<span>${title}</span></div><span class="l-count">${o.count??items.length}</span>${o.add?`<button class="l-add" onclick="${o.add}" title="Adicionar cartão" aria-label="Adicionar cartão">${ic('plus')}</button>`:''}</div>
     <div class="l-body">${body}${o.extra||''}</div>
-    ${o.add?`<div class="l-foot"><button onclick="${o.add}">${ic('plus')}Adicionar cartão</button></div>`:''}
+    ${o.add?`<div class="l-foot"><button onclick="${o.add}">${ic('plus')}Adicionar cartão</button></div>`:o.note?`<div class="l-note">${o.note}</div>`:''}
   </section>`;
 }
 
 /* ══════════ VISÃO QUADRO ══════════ */
 function renderQuadro(){
-  const acts=scoped();
+  const acts=scoped();const ym=ymOf(TODAY);
+  const pin=x=>!!data.pinned[x.a.id];
+  // tarefas que se repetem: pendentes no mês depois do dia inicial, concluídas quando têm o OK do mês
+  const monDone=x=>isMonthly(x.a)&&isActive(x.a)&&isMonthDone(x.a,ym);
+  const monOpen=x=>isMonthly(x.a)&&isActive(x.a)&&monthStarted(x.a,TODAY)&&!isMonthDone(x.a,ym);
   const tasks=acts.filter(x=>!isRec(x.a)&&isActive(x.a));
-  const lists=STATUS.map(s=>{
-    let items=tasks.filter(x=>statusOf(x.a)===s.id);
-    if(s.id==='concluido'){
-      items.sort((x,y)=>(y.a.dueDate||'').localeCompare(x.a.dueDate||''));
-      const total=items.length,shown=st.showAllDone?items:items.slice(0,25);
-      const extra=total>shown.length?`<button class="b sm" style="align-self:center" onclick="st.showAllDone=true;render()">Mostrar todas (${total})</button>`:'';
-      return listHTML(s.label,s.ic,shown.map(x=>cardHTML(x.a,x.cid)),{drop:s.id,count:total,extra,add:`openCreate({status:'${s.id}'})`,empty:'Nenhuma concluída ainda'});
-    }
-    items.sort((x,y)=>{const ox=isOverdue(x.a)?0:1,oy=isOverdue(y.a)?0:1;return ox-oy||byDue(x.a,y.a);});
-    return listHTML(s.label,s.ic,items.map(x=>cardHTML(x.a,x.cid)),{drop:s.id,add:`openCreate({status:'${s.id}'})`,empty:s.id==='pendente'?'Nenhuma tarefa a fazer':'Arraste cartões para cá'});
-  });
-  const rots=acts.filter(x=>isRec(x.a));
-  const dueToday=rots.filter(x=>isActive(x.a)&&isDueOn(x.a,NOW)&&!isExcepted(x.a.id,TODAY));
-  const others=rots.filter(x=>!dueToday.includes(x));
+  const open=[...tasks.filter(x=>statusOf(x.a)!=='concluido'),...acts.filter(monOpen)];
+  const done=[...tasks.filter(x=>statusOf(x.a)==='concluido'),...acts.filter(monDone)];
+  const rots=acts.filter(x=>isRec(x.a)&&!monOpen(x)&&!monDone(x));
+  const lists=[];
+  // Fixadas: primeira coluna, em destaque (somem daqui quando concluídas)
+  const pinned=[...open,...rots].filter(pin).sort((x,y)=>(isOverdue(x.a)?0:1)-(isOverdue(y.a)?0:1)||byDue(x.a,y.a));
+  if(pinned.length)lists.push(listHTML('Fixadas','pin',pinned.map(x=>cardHTML(x.a,x.cid)),{cls:'l-pin',drop:'pin',note:`${ic('pin','s')}Arraste um cartão para cá para fixar`}));
+  const todo=open.filter(x=>!pin(x)).sort((x,y)=>(isOverdue(x.a)?0:1)-(isOverdue(y.a)?0:1)||byDue(x.a,y.a));
+  lists.push(listHTML('A fazer','circle',todo.map(x=>cardHTML(x.a,x.cid)),{drop:'pendente',add:`openCreate({status:'pendente'})`,empty:'Nenhuma tarefa a fazer'}));
+  const doneKey=x=>isMonthly(x.a)?(monthDoneDate(x.a.id,ym)||''):(x.a.doneAt||tEnd(x.a)||tStart(x.a)||'');
+  done.sort((x,y)=>doneKey(y).localeCompare(doneKey(x)));
+  const total=done.length,shown=st.showAllDone?done:done.slice(0,25);
+  const extra=total>shown.length?`<button class="b sm" style="align-self:center" onclick="st.showAllDone=true;render()">Mostrar todas (${total})</button>`:'';
+  lists.push(listHTML('Concluído','checkCircle',shown.map(x=>cardHTML(x.a,x.cid)),{drop:'concluido',count:total,extra,add:`openCreate({status:'concluido'})`,empty:'Nenhuma concluída ainda'}));
+  const rest=rots.filter(x=>!pin(x));
+  const dueToday=rest.filter(x=>!isMonthly(x.a)&&isActive(x.a)&&isDueOn(x.a,NOW)&&!isExcepted(x.a.id,TODAY));
+  const nextMon=rest.filter(x=>isMonthly(x.a)&&isActive(x.a));
+  const others=rest.filter(x=>!dueToday.includes(x)&&!nextMon.includes(x));
   dueToday.sort((x,y)=>(isDone(x.a.id,TODAY)?1:0)-(isDone(y.a.id,TODAY)?1:0)||byPri(x.a,y.a));
+  nextMon.sort((x,y)=>byDue(x.a,y.a));
   others.sort((x,y)=>(isActive(x.a)?0:1)-(isActive(y.a)?0:1)||byPri(x.a,y.a));
   let rh='';
   if(dueToday.length)rh+=`<div class="l-sec">${ic('calCheck','s')}Para hoje</div>`+dueToday.map(x=>cardHTML(x.a,x.cid)).join('');
+  if(nextMon.length)rh+=`<div class="l-sec">${ic('calDays','s')}Se repetem, ainda não começaram este mês</div>`+nextMon.map(x=>cardHTML(x.a,x.cid)).join('');
   if(others.length)rh+=`<div class="l-sec">${ic('repeat','s')}Outros dias</div>`+others.map(x=>cardHTML(x.a,x.cid)).join('');
-  lists.push(listHTML('Rotinas','repeat',rh?[rh]:[],{count:rots.length,add:`openCreate({schedType:'semanal'})`,empty:'Use Toda semana, Todo mês ou Diária ao criar'}));
+  lists.push(listHTML('Rotinas','repeat',rh?[rh]:[],{count:rest.length,add:`openCreate({schedType:'semanal'})`,empty:'Use Se repete, Toda semana ou Diária ao criar'}));
   document.getElementById('canvas').innerHTML=`<div class="board">${lists.join('')}</div>`;
 }
 
 /* ══════════ VISÃO HOJE ══════════ */
 function renderHoje(){
   const acts=scoped().filter(x=>isActive(x.a));
-  const pinned=[],atras=[],hoje=[],rot=[],feitas=[];
+  const pinned=[],hoje=[],rot=[],feitas=[];
   acts.forEach(x=>{
-    const a=x.a;
-    if(isRec(a)){
-      if(!isDueOn(a,NOW)||isExcepted(a.id,TODAY))return;
-      if(isDone(a.id,TODAY))feitas.push(x);else if(data.pinned[a.id])pinned.push(x);else rot.push(x);
-    }else{
-      if(!a.dueDate||a.dueDate>TODAY)return;
-      if(statusOf(a)==='concluido'){if(a.dueDate===TODAY)feitas.push(x);return;}
-      if(data.pinned[a.id])pinned.push(x);else if(a.dueDate<TODAY)atras.push(x);else hoje.push(x);
-    }
+    const b=todayBucket(x.a);if(!b)return;
+    if(b==='feita'){feitas.push(x);return;}
+    if(data.pinned[x.a.id]){pinned.push(x);return;}
+    ({hoje,rot})[b].push(x);
   });
-  [pinned,hoje,rot,feitas].forEach(l=>l.sort((x,y)=>byPri(x.a,y.a)));
-  atras.sort((x,y)=>byDue(x.a,y.a));
+  [rot,feitas].forEach(l=>l.sort((x,y)=>byPri(x.a,y.a)));
+  [pinned,hoje].forEach(l=>l.sort((x,y)=>byDue(x.a,y.a)));
   const C=l=>l.map(x=>cardHTML(x.a,x.cid,{noDrag:true}));
   const add=`openCreate({dueDate:'${TODAY}'})`;
   const lists=[];
-  if(pinned.length)lists.push(listHTML('Fixadas','pin',C(pinned)));
-  lists.push(listHTML('Atrasadas','alert',C(atras),{empty:'Nada atrasado'}));
-  lists.push(listHTML('Para hoje','calCheck',C(hoje),{add,empty:'Nada com prazo para hoje'}));
+  if(pinned.length)lists.push(listHTML('Fixadas','pin',C(pinned),{cls:'l-pin'}));
+  lists.push(listHTML('Para hoje','calCheck',C(hoje),{add,empty:'Nada com data para hoje'}));
   lists.push(listHTML('Rotinas de hoje','repeat',C(rot),{empty:'Nenhuma rotina pendente hoje'}));
   lists.push(listHTML('Feitas hoje','checkCircle',C(feitas),{empty:'Conclua algo e ele aparece aqui'}));
   document.getElementById('canvas').innerHTML=`<div class="board">${lists.join('')}</div>`;
@@ -704,14 +794,14 @@ function actsOnDate(date){
   return scoped().filter(({a})=>{
     if(!isActive(a))return false;
     if(isRec(a))return isDueOn(a,date)&&!isExcepted(a.id,ds);
-    return a.dueDate===ds;
+    return isDueOn(a,date); // tarefa com intervalo aparece em todos os dias dele
   });
 }
 function renderSemana(){
   const{mon}=weekRange();const lists=[];
   for(let i=0;i<7;i++){
     const d=new Date(mon);d.setDate(mon.getDate()+i);const ds=fmtD(d);
-    const items=actsOnDate(d).sort((x,y)=>(data.pinned[y.a.id]?1:0)-(data.pinned[x.a.id]?1:0)||byPri(x.a,y.a));
+    const items=actsOnDate(d).sort((x,y)=>byPin(x,y)||byPri(x.a,y.a));
     const t=`${WDAYS[d.getDay()]}, ${d.getDate()}${ds===TODAY?' · hoje':''}`;
     lists.push(listHTML(esc(t),ds===TODAY?'calCheck':'calendar',items.map(x=>cardHTML(x.a,x.cid,{ds})),{drop:'d:'+ds,add:`openCreate({dueDate:'${ds}'})`,empty:'Livre'}));
   }
@@ -722,25 +812,53 @@ function renderSemana(){
 function shiftMonth(n){let m=st.mM+n,y=st.mY;if(m<0){m=11;y--;}if(m>11){m=0;y++;}st.mM=m;st.mY=y;st.mSel=null;render();}
 function renderMes(){
   const y=st.mY,m=st.mM;const first=new Date(y,m,1);const start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
+  // dia escolhido: o clicado; se nenhum, hoje (no mês atual) ou o dia 1
+  const ym=`${y}-${String(m+1).padStart(2,'0')}`;
+  if(!st.mSel)st.mSel=ymOf(TODAY)===ym?TODAY:ym+'-01';
+  const sel=st.mSel;
+  const late=(a,ds)=>!doneFor(a,ds)&&(isMonthly(a)?(ymOf(ds)===ymOf(TODAY)&&isOverdue(a)):isOverdue(a))&&ds<=TODAY;
   let g='';
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);const ds=fmtD(d);
     if(i>=35&&d.getMonth()!==m)break;
-    const items=actsOnDate(d).sort((a,b)=>byPri(a.a,b.a));
-    const chips=items.slice(0,3).map(({a,cid})=>{const dn=isRec(a)?isDone(a.id,ds):statusOf(a)==='concluido';return`<div class="chip${dn?' d':''}" title="${esc(a.title)}"><span class="cd" style="background:${COS[cid].color}"></span>${esc(a.title)}</div>`;}).join('');
-    g+=`<div class="cell${d.getMonth()!==m?' out':''}${ds===TODAY?' today':''}${st.mSel===ds?' picked':''}" onclick="st.mSel='${ds}';render()"><div class="cell-n"><span>${d.getDate()}</span>${items.length?`<span>${items.length}</span>`:''}</div>${chips}${items.length>3?`<div class="more">mais ${items.length-3}</div>`:''}</div>`;
+    const items=actsOnDate(d).sort((a,b)=>byPin(a,b)||byPri(a.a,b.a));
+    const nDone=items.filter(x=>doneFor(x.a,ds)).length;
+    const chips=items.slice(0,3).map(({a,cid})=>{const dn=doneFor(a,ds);return`<div class="chip${dn?' d':late(a,ds)?' ov':''}${data.pinned[a.id]?' pin':''}" title="${esc(a.title)}"><span class="cd" style="background:${COS[cid].color}"></span><span class="ct">${esc(a.title)}</span></div>`;}).join('');
+    const badge=items.length?`<span class="cell-c${nDone===items.length?' all':''}" title="${nDone} de ${items.length} feitas">${nDone}/${items.length}</span>`:'';
+    const wk=d.getDay()===0||d.getDay()===6;
+    g+=`<button class="cell${d.getMonth()!==m?' out':''}${wk?' wk':''}${ds===TODAY?' today':''}${sel===ds?' picked':''}" onclick="st.mSel='${ds}';render()" aria-label="${esc(d.toLocaleDateString('pt-BR',{day:'numeric',month:'long'}))}, ${items.length} atividades"><div class="cell-n"><span class="dn">${d.getDate()}</span>${badge}</div>${chips}${items.length>3?`<div class="more">mais ${items.length-3}</div>`:''}</button>`;
   }
-  let h=`<div class="cal"><div class="cal-h">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>`<div>${x}</div>`).join('')}</div><div class="cal-g">${g}</div></div>`;
-  const sel=st.mSel;
-  if(sel){
-    const d=parseD(sel);const items=actsOnDate(d).sort((a,b)=>byPri(a.a,b.a));
-    h+=`<div class="day-panel"><div class="board" style="height:auto">${listHTML(esc(d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})),'calendar',items.map(x=>cardHTML(x.a,x.cid,{ds:sel,noDrag:true})),{add:`openCreate({dueDate:'${sel}'})`,empty:'Nenhuma atividade neste dia'})}</div></div>`;
-  }
-  document.getElementById('canvas').innerHTML=h;
+  const cal=`<div class="cal"><div class="cal-h">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>`<div>${x}</div>`).join('')}</div><div class="cal-g">${g}</div></div>`;
+  // painel lateral: detalhes do dia escolhido
+  const d=parseD(sel);const items=actsOnDate(d).sort((a,b)=>byPin(a,b)||(late(a.a,sel)?0:1)-(late(b.a,sel)?0:1)||byPri(a.a,b.a));
+  const pend=items.filter(x=>!doneFor(x.a,sel)),feitas=items.filter(x=>doneFor(x.a,sel)),atr=pend.filter(x=>late(x.a,sel)).length;
+  const C=l=>l.map(x=>cardHTML(x.a,x.cid,{ds:sel,noDrag:true})).join('');
+  const wd=d.toLocaleDateString('pt-BR',{weekday:'long'});
+  let body='';
+  if(pend.length)body+=`<div class="l-sec">${ic('circle','s')}Pendentes</div>`+C(pend);
+  if(feitas.length)body+=`<div class="l-sec">${ic('checkCircle','s')}Feitas</div>`+C(feitas);
+  if(!items.length)body=`<div class="empty-l">Nenhuma atividade neste dia</div>`;
+  const panel=`<aside class="day-panel">
+    <div class="dp-h"><div class="dp-d">${d.getDate()}</div><div style="flex:1;min-width:0"><div class="dp-w">${esc(wd)}${sel===TODAY?' · hoje':''}</div><div class="dp-m">${MONTHS[d.getMonth()]} de ${d.getFullYear()}</div></div>
+      <button class="l-add" onclick="openCreate({dueDate:'${sel}'})" title="Nova tarefa neste dia" aria-label="Nova tarefa neste dia">${ic('plus')}</button></div>
+    <div class="dp-s"><span><b>${pend.length}</b>pendentes</span><span class="r"><b>${atr}</b>atrasadas</span><span class="g"><b>${feitas.length}</b>feitas</span></div>
+    <div class="l-body">${body}</div>
+    <div class="l-foot"><button onclick="openCreate({dueDate:'${sel}'})">${ic('plus')}Nova tarefa neste dia</button></div>
+  </aside>`;
+  document.getElementById('canvas').innerHTML=`<div class="mes">${cal}${panel}</div>`;
 }
 
 /* ══════════ AÇÕES RÁPIDAS ══════════ */
-function toggleTaskDone(id,ev){if(ev)ev.stopPropagation();const f=findAct(id);if(!f)return;const a=f.a;a.status=statusOf(a)==='concluido'?'pendente':'concluido';save();render();toast(a.status==='concluido'?'checkCircle':'undo',a.status==='concluido'?'Tarefa concluída.':'Tarefa reaberta.');}
+function setTaskStatus(a,s){a.status=s;if(s==='concluido')a.doneAt=TODAY;else delete a.doneAt;}
+/* OK do mês: marca a tarefa que se repete como feita naquele mês (no mês seguinte ela volta pendente) */
+function toggleMonthDone(id,ds,ev){
+  if(ev)ev.stopPropagation();const f=findAct(id);if(!f)return;
+  const ym=ymOf(ds||TODAY),p=String(id)+'-'+ym+'-';
+  if(isMonthDone(f.a,ym)){Object.keys(data.comps).forEach(k=>{if(k.startsWith(p)&&k.length===p.length+2)delete data.comps[k];});toast('undo','Reaberta neste mês.');}
+  else{const w=monthWin(f.a,ym);const d=ym===ymOf(TODAY)?TODAY:(w?w.s:ym+'-01');data.comps[ck(id,d)]=true;toast('checkCircle','Feita em '+MONTHS[Number(ym.slice(5))-1].toLowerCase()+'. No próximo mês ela volta.');}
+  save();render();
+}
+function toggleTaskDone(id,ev){if(ev)ev.stopPropagation();const f=findAct(id);if(!f)return;const a=f.a;setTaskStatus(a,statusOf(a)==='concluido'?'pendente':'concluido');save();render();toast(a.status==='concluido'?'checkCircle':'undo',a.status==='concluido'?'Tarefa concluída.':'Tarefa reaberta.');}
 function toggleRecDone(id,ds,ev){if(ev)ev.stopPropagation();const k=ck(id,ds);if(data.comps[k])delete data.comps[k];else data.comps[k]=true;save();render();}
 function togglePin(id){if(data.pinned[id])delete data.pinned[id];else data.pinned[id]=true;save();render();}
 
@@ -752,8 +870,17 @@ function dragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))e.currentTar
 function dropOn(e,target){
   e.preventDefault();e.currentTarget.classList.remove('drop');
   const f=drag&&findAct(drag);drag=null;if(!f||isRec(f.a))return;
-  if(target.startsWith('d:')){f.a.dueDate=target.slice(2);toast('calendar','Prazo alterado para '+fmtDisp(f.a.dueDate)+'.');}
-  else{if(statusOf(f.a)===target)return;f.a.status=target;toast('arrow','Movida para '+STATUS_LBL[target]+'.');}
+  if(target==='pin'){if(data.pinned[f.a.id])return;togglePin(f.a.id);toast('pin','Fixada no topo.');return;}
+  if(target.startsWith('d:')){ // muda a data e mantém o tamanho do intervalo
+    const to=target.slice(2),s=tStart(f.a),e=tEnd(f.a);
+    if(f.a.startDate){const diff=Math.round((parseD(to)-parseD(s))/864e5);f.a.startDate=to;if(e){const n=parseD(e);n.setDate(n.getDate()+diff);f.a.dueDate=fmtD(n);}}
+    else f.a.dueDate=to;
+    toast('calendar','Data alterada para '+rangeLbl(tStart(f.a),tEnd(f.a))+'.');
+  }
+  else{
+    if(data.pinned[f.a.id]&&target==='pendente'){togglePin(f.a.id);if(statusOf(f.a)==='pendente'){toast('pin','Desafixada.');return;}}
+    if(statusOf(f.a)===target)return;setTaskStatus(f.a,target);toast('arrow','Movida para '+STATUS_LBL[target]+'.');
+  }
   save();render();
 }
 
@@ -765,7 +892,7 @@ function openCreate(def={}){
   if(!allowedCos().includes(co))co=allowedCos()[0]||'usee';
   mst={mode:'create',dirty:false,showShare:false,showDel:false,w:{
     title:def.title||'',desc:'',cat:CATS[0],pri:'media',status:def.status&&def.status!=='concluido'?def.status:'pendente',
-    schedType:def.schedType||'date',dueDate:def.dueDate||TODAY,weekDay:1,monthDay:1,companies:[co],
+    schedType:def.schedType||'date',startDate:def.dueDate||TODAY,endDate:'',repeat:false,weekDay:1,companies:[co],
     members:[],checklist:[]}};
   if(def.status==='concluido')mst.w.status='concluido';
   buildModal();openOv();setTimeout(()=>document.getElementById('m-title')?.focus(),60);
@@ -774,9 +901,23 @@ function openEdit(id,ds){
   const f=findAct(id);if(!f)return;const a=f.a;
   mst={mode:'edit',id:a.id,cid:f.cid,ds:ds||TODAY,dirty:false,showShare:false,showDel:false,w:{
     title:a.title||'',desc:a.desc||'',cat:a.cat||CATS[0],pri:a.pri||'media',status:statusOf(a),
-    schedType:a.schedType||'date',dueDate:a.dueDate||TODAY,weekDay:a.weekDay??1,monthDay:a.monthDay??1,companies:[f.cid],
+    ...editDates(a),weekDay:a.weekDay??1,companies:[f.cid],
     members:[...(a.members||[])],checklist:JSON.parse(JSON.stringify(a.checklist||[]))}};
   buildModal();openOv();
+}
+/* datas da tarefa no formulário: tipo, início, data final e se repete */
+function editDates(a){
+  if(isMonthly(a)){
+    let s=a.startDate;
+    if(!s){const w=monthWin(a,ymOf(TODAY));s=w.s;} // antigas "Todo dia X": usa o mês atual
+    let e='';
+    if(a.startDate&&a.monthDayEnd){const w=monthWin(a,ymOf(s));e=w&&w.e||'';}
+    else if(!a.startDate)e=s; // antigas: só o dia
+    return{schedType:'date',repeat:true,startDate:s,endDate:e};
+  }
+  if(isRec(a))return{schedType:a.schedType,repeat:false,startDate:TODAY,endDate:''};
+  const s=tStart(a)||TODAY,e=tEnd(a)||'';
+  return{schedType:'date',repeat:false,startDate:s,endDate:a.startDate?e:(e||s)};
 }
 function openOv(){document.getElementById('ov').classList.add('open');document.body.style.overflow='hidden';autoGrow(document.getElementById('m-title'));}
 function closeModal(force){
@@ -803,7 +944,7 @@ function W(k,v){mst.w[k]=v;mst.dirty=true;}
 function buildModal(){
   const w=mst.w,isEdit=mst.mode==='edit';const a=isEdit?findAct(mst.id)?.a:null;
   const cats=CATS.includes(w.cat)?CATS:[...CATS,w.cat];
-  const where=isEdit?`na lista <b>${isRec(a)?'Rotinas':STATUS_LBL[statusOf(a)]}</b> · ${esc(COS[mst.cid].label)}`:'Nova tarefa';
+  const where=isEdit?`na lista <b>${isMonthly(a)?(doneFor(a,TODAY)?'Concluído':monthStarted(a,TODAY)?'A fazer':'Rotinas'):isRec(a)?'Rotinas':STATUS_LBL[statusOf(a)]}</b>${data.pinned[a.id]?' · fixada':''} · ${esc(COS[mst.cid].label)}`:'Nova tarefa';
   let h=`<div class="md-h">${ic('card','l')}<textarea id="m-title" class="t-in" rows="1" placeholder="Nome da tarefa" oninput="W('title',this.value);autoGrow(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();saveModal()}">${esc(w.title)}</textarea><button class="x" onclick="closeModal()" aria-label="Fechar">${ic('x')}</button></div>
   <div class="md-where">${where}</div>
   <div class="md-g"><div>
@@ -811,7 +952,7 @@ function buildModal(){
     <div class="sec"><div class="sec-t">${ic('tag')}Detalhes</div><div class="sec-b"><div class="fl">
       <div class="fld"><label for="m-cat">Categoria</label><select id="m-cat" class="sel" onchange="W('cat',this.value)">${cats.map(c=>`<option${c===w.cat?' selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="fld"><label for="m-pri">Prioridade</label><select id="m-pri" class="sel" onchange="W('pri',this.value)">${['alta','media','baixa'].map(p=>`<option value="${p}"${p===w.pri?' selected':''}>${PRI_LBL[p]}</option>`).join('')}</select></div>
-      <div class="fld" id="m-status-f"${w.schedType!=='date'?' style="display:none"':''}><label for="m-status">Lista</label><select id="m-status" class="sel" onchange="W('status',this.value)">${STATUS.map(s=>`<option value="${s.id}"${s.id===w.status?' selected':''}>${s.label}</option>`).join('')}</select></div>
+      <div class="fld" id="m-status-f"${w.schedType!=='date'||w.repeat?' style="display:none"':''}><label for="m-status">Lista</label><select id="m-status" class="sel" onchange="W('status',this.value)">${STATUS.map(s=>`<option value="${s.id}"${s.id===w.status?' selected':''}>${s.label}</option>`).join('')}</select></div>
     </div></div></div>
     <div class="sec"><div class="sec-t">${ic('calendar')}Quando</div><div class="sec-b" id="m-sched">${schedHTML()}</div></div>
     <div class="sec"><div class="sec-t">${ic('text')}Descrição</div><div class="sec-b"><textarea id="m-desc" class="in" placeholder="Detalhes, observações, links" oninput="W('desc',this.value)">${esc(w.desc)}</textarea></div></div>
@@ -833,15 +974,31 @@ function cosHTML(){
 function toggleCo(id){const l=mst.w.companies;const i=l.indexOf(id);if(i>=0){if(l.length>1)l.splice(i,1);}else l.push(id);mst.dirty=true;document.getElementById('m-cos').innerHTML=cosHTML();}
 function schedHTML(){
   const w=mst.w,s=w.schedType;
-  const tabs=[['date','calendar','Data'],['semanal','repeat','Toda semana'],['mensal','calDays','Todo mês'],['diaria','sun','Diária']];
+  const tabs=[['date','calendar','Data'],['semanal','repeat','Toda semana'],['diaria','sun','Diária']];
   let h=`<div class="seg">${tabs.map(([id,i,l])=>`<button class="${s===id?'on':''}" onclick="setSched('${id}')">${ic(i,'s')}${l}</button>`).join('')}</div><div style="margin-top:10px">`;
-  if(s==='date')h+=`<div class="fld"><label for="m-date">Data de entrega</label><input type="date" id="m-date" class="in" value="${esc(w.dueDate||TODAY)}" onchange="W('dueDate',this.value)" style="width:180px"/></div>`;
+  if(s==='date'){
+    h+=`<div class="fl"><div class="fld"><label for="m-start">Data de início</label><input type="date" id="m-start" class="in" value="${esc(w.startDate||TODAY)}" onchange="W('startDate',this.value);schedHint()" style="width:180px"/></div>
+      <div class="fld"><label for="m-end">Data final (opcional)</label><input type="date" id="m-end" class="in" value="${esc(w.endDate||'')}" onchange="W('endDate',this.value);schedHint()" style="width:180px"/></div></div>
+      <label class="rep"><input type="checkbox" id="m-rep"${w.repeat?' checked':''} onchange="W('repeat',this.checked);setStatusVis();schedHint()"/>${ic('repeat','s')}Se repete todo mês</label>
+      <div class="hint" id="m-sched-hint" style="margin-top:6px">${schedHintTxt()}</div>`;
+  }
   if(s==='semanal')h+=`<div class="fld"><label for="m-wd">Dia da semana</label><select id="m-wd" class="sel" style="width:180px" onchange="W('weekDay',Number(this.value))">${WDAYS.map((d,i)=>`<option value="${i}"${Number(w.weekDay)===i?' selected':''}>${d}</option>`).join('')}</select></div>`;
-  if(s==='mensal')h+=`<div class="fld"><label for="m-md">Dia do mês</label><input type="number" id="m-md" class="in" min="1" max="31" value="${esc(w.monthDay)}" style="width:100px" oninput="W('monthDay',this.value)"/></div>`;
   if(s==='diaria')h+=`<div class="hint">Aparece todos os dias em Hoje e na lista Rotinas.</div>`;
   return h+'</div>';
 }
-function setSched(t){W('schedType',t);document.getElementById('m-sched').innerHTML=schedHTML();const sf=document.getElementById('m-status-f');if(sf)sf.style.display=t==='date'?'':'none';}
+function setSched(t){W('schedType',t);document.getElementById('m-sched').innerHTML=schedHTML();setStatusVis();}
+function setStatusVis(){const sf=document.getElementById('m-status-f');if(sf)sf.style.display=mst.w.schedType==='date'&&!mst.w.repeat?'':'none';}
+function schedHintTxt(){
+  const w=mst.w,s=w.startDate,e=w.endDate;if(!s)return'';
+  const d1=parseD(s).getDate();
+  if(w.repeat){
+    if(e&&e>=s)return`Todo mês, a partir de ${dayLbl(s)}: fica pendente do dia ${d1} ao dia ${parseD(e).getDate()} até você dar OK. Depois do dia ${parseD(e).getDate()} fica atrasada. No mês seguinte volta.`;
+    return`Todo mês, a partir de ${dayLbl(s)}: fica pendente a partir do dia ${d1} até você dar OK. No mês seguinte volta.`;
+  }
+  if(e&&e>=s)return`Fica pendente de ${rangeLbl(s,e)}. Depois disso fica atrasada.`;
+  return`Fica pendente a partir de ${dayLbl(s)}, sem prazo final.`;
+}
+function schedHint(){const h=document.getElementById('m-sched-hint');if(h)h.textContent=schedHintTxt();}
 
 function checklistHTML(){
   const l=mst.w.checklist;const dn=l.filter(x=>x.done).length;
@@ -859,8 +1016,18 @@ function ckDel(i){mst.w.checklist.splice(i,1);mst.dirty=true;ckRe();}
 function commentsHTML(a){
   const l=(a&&a.comments)||[];
   let h=`<div class="add-row" style="margin-top:0"><textarea id="m-cm-in" class="in" style="min-height:44px" placeholder="Escreva um comentário"></textarea></div><div style="margin-top:6px"><button class="b" onclick="addComment()">${ic('message')}Comentar</button></div>`;
-  h+=[...l].reverse().map(c=>`<div class="cm"><span class="av">${ic('users','s')}</span><div class="cm-b"><div class="cm-n"><b>${esc(c.byEmail||'Você')}</b>${new Date(c.at).toLocaleString('pt-BR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div><div class="cm-t">${esc(c.text)}</div></div></div>`).join('');
+  h+=[...l].reverse().map(c=>`<div class="cm"><span class="av">${ic('users','s')}</span><div class="cm-b"><div class="cm-n"><b>${esc(c.byEmail||'Você')}</b><span>${new Date(c.at).toLocaleString('pt-BR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>${isMyComment(c)?`<button class="cm-del" onclick="delComment('${esc(String(c.id))}')" title="Excluir comentário" aria-label="Excluir comentário">${ic('trash','s')}Excluir</button>`:''}</div><div class="cm-t">${esc(c.text)}</div></div></div>`).join('');
   return h;
+}
+/* só quem escreveu o comentário pode excluir */
+function isMyComment(c){return MODE==='online'?!!(SB.user&&c.byEmail&&c.byEmail.toLowerCase()===SB.user.email.toLowerCase()):!c.byEmail;}
+async function delComment(cid){
+  const f=findAct(mst.id);if(!f)return;
+  const c=(f.a.comments||[]).find(x=>String(x.id)===cid);if(!c||!isMyComment(c))return;
+  if(!await ask('Excluir este comentário? Não dá para desfazer.',{title:'Excluir comentário',ok:'Excluir',danger:true}))return;
+  const g=findAct(mst?.id);if(!g)return;
+  g.a.comments=(g.a.comments||[]).filter(x=>String(x.id)!==cid);
+  save();render();document.getElementById('m-cm').innerHTML=commentsHTML(g.a);toast('trash','Comentário excluído.');
 }
 function addComment(){
   const i=document.getElementById('m-cm-in');const t=(i.value||'').trim();if(!t)return;
@@ -873,7 +1040,11 @@ function addComment(){
 function actionsHTML(a){
   const rec=isRec(a);let h='';
   h+=`<button class="b full" onclick="togglePin('${a.id}');document.getElementById('m-actions').innerHTML=actionsHTML(findAct('${a.id}').a)">${ic('pin')}${data.pinned[a.id]?'Desafixar':'Fixar no topo'}</button>`;
-  if(rec){
+  if(isMonthly(a)){
+    const ds=mst.ds,ym=ymOf(ds),dn=isMonthDone(a,ym),mes=MONTHS[Number(ym.slice(5))-1].toLowerCase();
+    if(dn||monthStarted(a,ds))h+=`<button class="b full" onclick="toggleMonthDone('${a.id}','${ds}');document.getElementById('m-actions').innerHTML=actionsHTML(findAct('${a.id}').a)">${ic(dn?'undo':'check')}${dn?'Reabrir':'Dar OK'} em ${mes}</button>`;
+    h+=`<button class="b full" onclick="toggleActive('${a.id}')">${ic(isActive(a)?'pause':'play')}${isActive(a)?'Pausar repetição':'Reativar repetição'}</button>`;
+  }else if(rec){
     const ds=mst.ds;const due=isDueOn(a,parseD(ds));
     if(due)h+=`<button class="b full" onclick="toggleRecDone('${a.id}','${ds}');document.getElementById('m-actions').innerHTML=actionsHTML(findAct('${a.id}').a)">${ic(isDone(a.id,ds)?'undo':'check')}${isDone(a.id,ds)?'Reabrir':'Concluir'} em ${fmtDisp(ds)}</button>`;
     h+=`<button class="b full" onclick="toggleActive('${a.id}')">${ic(isActive(a)?'pause':'play')}${isActive(a)?'Pausar rotina':'Reativar rotina'}</button>`;
@@ -884,7 +1055,7 @@ function actionsHTML(a){
   else{
     const n=allActs().filter(x=>x.a.title===a.title).length;
     h+=`<div class="del-opts"><span class="lbl">Excluir o quê?</span>`;
-    if(rec)h+=`<button class="b full danger" onclick="delOnlyDay()">${ic('calendar')}Só em ${fmtDisp(mst.ds)}</button>`;
+    if(rec&&!isMonthly(a))h+=`<button class="b full danger" onclick="delOnlyDay()">${ic('calendar')}Só em ${fmtDisp(mst.ds)}</button>`;
     h+=`<button class="b full danger" onclick="delThis()">${ic('trash')}${rec?'Esta rotina':'Esta tarefa'}</button>`;
     if(n>1)h+=`<button class="b full danger" onclick="delAllSame()">${ic('layers')}Todas com este nome (${n})</button>`;
     h+=`<button class="b full" onclick="mst.showDel=false;document.getElementById('m-actions').innerHTML=actionsHTML(findAct('${a.id}').a)">Cancelar</button></div>`;
@@ -901,18 +1072,25 @@ function delAllSame(){const f=findAct(mst.id);if(!f)return;const t=f.a.title;con
 function saveModal(){
   const w=mst.w;const title=(w.title||'').trim();
   if(!title){document.getElementById('m-title').focus();toast('alert','Dê um nome para a tarefa.');return false;}
-  if(w.schedType==='date'&&!w.dueDate){toast('alert','Escolha a data de entrega.');return false;}
-  const s=w.schedType;
+  const isDate=w.schedType==='date';
+  if(isDate&&!w.startDate){toast('alert','Escolha a data de início.');return false;}
+  if(isDate&&w.endDate&&w.endDate<w.startDate){toast('alert','A data final precisa ser depois da data de início.');return false;}
+  if(isDate&&w.repeat&&w.endDate&&ymOf(w.endDate)!==ymOf(w.startDate)){toast('alert','Na tarefa que se repete, a data final precisa ser no mesmo mês da data de início.');return false;}
+  const s=isDate&&w.repeat?'mensal':w.schedType;
   const f={title,desc:(w.desc||'').trim(),cat:w.cat,pri:w.pri,schedType:s,
-    dueDate:s==='date'?w.dueDate:null,weekDay:s==='semanal'?Number(w.weekDay):null,
-    monthDay:s==='mensal'?Math.max(1,Math.min(31,parseInt(w.monthDay)||1)):null,
+    startDate:isDate?w.startDate:null,dueDate:isDate?(w.endDate||null):null,
+    weekDay:s==='semanal'?Number(w.weekDay):null,
+    monthDay:s==='mensal'?parseD(w.startDate).getDate():null,
+    monthDayEnd:s==='mensal'&&w.endDate?parseD(w.endDate).getDate():null,
     members:[...w.members],checklist:w.checklist};
   if(mst.mode==='edit'){
     const cur=findAct(mst.id);if(!cur){closeModal(true);return;}
     const a=cur.a;
     const sel=w.companies;
-    if(s==='date')f.status=w.status;
+    const prev=statusOf(a);
     Object.assign(a,f);
+    if(s==='date'&&w.status!==prev)setTaskStatus(a,w.status);
+    else if(s!=='date')a.status='pendente';else a.status=prev;
     if(!sel.includes(cur.cid)){ // trocou de empresa: move
       data.acts[cur.cid]=data.acts[cur.cid].filter(x=>x!==a);
       const to=sel[0];a.company=to;data.acts[to].unshift(a);
@@ -923,7 +1101,7 @@ function saveModal(){
     }
   }else{
     w.companies.forEach((c,i)=>{
-      data.acts[c].unshift({id:newId(i),...f,checklist:JSON.parse(JSON.stringify(f.checklist)),status:s==='date'?w.status:'pendente',active:true,company:c,createdAt:TODAY,createdByEmail:MODE==='online'?SB.user.email:undefined,comments:[]});
+      data.acts[c].unshift({id:newId(i),...f,checklist:JSON.parse(JSON.stringify(f.checklist)),status:s==='date'?w.status:'pendente',...(s==='date'&&w.status==='concluido'?{doneAt:TODAY}:{}),active:true,company:c,createdAt:TODAY,createdByEmail:MODE==='online'?SB.user.email:undefined,comments:[]});
     });
   }
   const created=mst.mode==='create';
