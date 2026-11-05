@@ -783,18 +783,18 @@ function renderQuadro(){
   // Fixadas: primeira coluna, em destaque (somem daqui quando concluídas)
   const pinned=[...open,...rots].filter(pin).sort((x,y)=>(isOverdue(x.a)?0:1)-(isOverdue(y.a)?0:1)||byDue(x.a,y.a));
   if(pinned.length)lists.push(listHTML('Fixadas','pin',pinned.map(x=>cardHTML(x.a,x.cid)),{cls:'l-pin',drop:'pin',note:`${ic('pin','s')}Arraste um cartão para cá para fixar`}));
-  const todo=open.filter(x=>!pin(x)).sort((x,y)=>(isOverdue(x.a)?0:1)-(isOverdue(y.a)?0:1)||byDue(x.a,y.a));
+  const todo=[...open].sort((x,y)=>byPin(x,y)||(isOverdue(x.a)?0:1)-(isOverdue(y.a)?0:1)||byDue(x.a,y.a));
   lists.push(listHTML('A fazer','circle',todo.map(x=>cardHTML(x.a,x.cid)),{drop:'pendente',add:`openCreate({status:'pendente'})`,empty:'Nenhuma tarefa a fazer'}));
   const doneKey=x=>isMonthly(x.a)?(monthDoneDate(x.a.id,ym)||''):(x.a.doneAt||tEnd(x.a)||tStart(x.a)||'');
   done.sort((x,y)=>doneKey(y).localeCompare(doneKey(x)));
   const total=done.length,shown=st.showAllDone?done:done.slice(0,25);
   const extra=total>shown.length?`<button class="b sm" style="align-self:center" onclick="st.showAllDone=true;render()">Mostrar todas (${total})</button>`:'';
   lists.push(listHTML('Concluído','checkCircle',shown.map(x=>cardHTML(x.a,x.cid)),{drop:'concluido',count:total,extra,add:`openCreate({status:'concluido'})`,empty:'Nenhuma concluída ainda'}));
-  const rest=rots.filter(x=>!pin(x));
+  const rest=rots; // fixadas também ficam na coluna delas (a fixação é de cada pessoa)
   const dueToday=rest.filter(x=>!isMonthly(x.a)&&isActive(x.a)&&isDueOn(x.a,NOW)&&!isExcepted(x.a.id,TODAY));
   const nextMon=rest.filter(x=>isMonthly(x.a)&&isActive(x.a));
   const others=rest.filter(x=>!dueToday.includes(x)&&!nextMon.includes(x));
-  dueToday.sort((x,y)=>(isDone(x.a.id,TODAY)?1:0)-(isDone(y.a.id,TODAY)?1:0)||byPri(x.a,y.a));
+  dueToday.sort((x,y)=>(isDone(x.a.id,TODAY)?1:0)-(isDone(y.a.id,TODAY)?1:0)||byPin(x,y)||byPri(x.a,y.a));
   nextMon.sort((x,y)=>byDue(x.a,y.a));
   others.sort((x,y)=>(isActive(x.a)?0:1)-(isActive(y.a)?0:1)||byPri(x.a,y.a));
   let rh='';
@@ -812,11 +812,11 @@ function renderHoje(){
   acts.forEach(x=>{
     const b=todayBucket(x.a);if(!b)return;
     if(b==='feita'){feitas.push(x);return;}
-    if(data.pinned[x.a.id]){pinned.push(x);return;}
+    if(data.pinned[x.a.id])pinned.push(x);
     ({hoje,rot})[b].push(x);
   });
-  [rot,feitas].forEach(l=>l.sort((x,y)=>byPri(x.a,y.a)));
-  [pinned,hoje].forEach(l=>l.sort((x,y)=>byDue(x.a,y.a)));
+  [rot,feitas].forEach(l=>l.sort((x,y)=>byPin(x,y)||byPri(x.a,y.a)));
+  [pinned,hoje].forEach(l=>l.sort((x,y)=>byPin(x,y)||byDue(x.a,y.a)));
   const C=l=>l.map(x=>cardHTML(x.a,x.cid,{noDrag:true}));
   const add=`openCreate({dueDate:'${TODAY}'})`;
   const lists=[];
