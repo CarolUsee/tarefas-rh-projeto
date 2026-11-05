@@ -5,5 +5,5 @@ window.TAREFAS_CONFIG = {
   supabaseUrl: 'https://onjcsjgneguuqnvgonck.supabase.co',
   supabaseAnonKey: 'sb_publishable_rbChwyCkuFdS4kGc_xOMcw_daQM_uni',
   // Endereço do site no Vercel (usado quando você abre o index.html direto do computador)
-  siteUrl: 'https://SEU-PROJETO.vercel.app'
+  siteUrl: 'https://tarefas-rh-projeto-nine.vercel.app/'
 };
