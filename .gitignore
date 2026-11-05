@@ -1,0 +1,5 @@
+# Backups com dados do RH: nunca enviar para o GitHub
+dados/
+node_modules/
+.vercel/
+.env*
